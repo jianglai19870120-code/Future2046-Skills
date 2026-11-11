@@ -45,9 +45,9 @@ def is_misconception_artifact(path: Path) -> bool:
         text = path.read_text(encoding="utf-8", errors="ignore")[:65536]
     except OSError:
         return False
-    markers = ("MISC-V4", "误区拆解", "avoid-pitfalls",
-               "Future2046-Skills\\workspaces\\误区拆解",
-               "Future2046-Skills/workspaces/误区拆解")
+    markers = ("MISC-V4", "少走弯路工作区", "avoid-pitfalls",
+               "Future2046-Skills\\workspaces\\少走弯路工作区",
+               "Future2046-Skills/workspaces/少走弯路工作区")
     return any(marker in text for marker in markers)
 
 

@@ -13,7 +13,15 @@ from check_skill_registry import registry
 
 
 def run(command: list[str], cwd: Path) -> list[str]:
-    result = subprocess.run(command, cwd=cwd, text=True, capture_output=True, encoding="utf-8", env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"})
+    result = subprocess.run(
+        command,
+        cwd=cwd,
+        text=True,
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+    )
     if result.returncode:
         return [f"{ ' '.join(command) }\n{result.stdout}{result.stderr}"]
     return []
@@ -40,7 +48,7 @@ def check_links(root: Path) -> list[str]:
 
 def check_workspace_source(root: Path) -> list[str]:
     """Validate that the registered workspace source has its public guide."""
-    local = root / "workspaces" / "误区拆解"
+    local = root / "workspaces" / "少走弯路工作区"
     if not (local / "README.md").is_file() or not (local / "workspace.yaml").is_file():
         return ["workspace source requires README.md and workspace.yaml"]
     return []

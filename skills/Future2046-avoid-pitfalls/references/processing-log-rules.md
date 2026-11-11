@@ -12,7 +12,7 @@ run 的 `review/`，提交输入通过 `scripts/prepare_submission.py` 校验当
 
 历史卡片索引重建、迁移和清理说明不属于源稿处理记录，统一写入 `98_处理记录/recovery-events.jsonl`。不得把 `historical_rebuild`、`reconstructed` 或其他非 V4 记录写入正式 `processing-log.jsonl`，也不得据此宣称源稿已完成 V4 流程。
 
-Excel 物化另写入 `98_处理记录/excel-materialization-log.jsonl`。每条记录必须包含 `sourceExcel`、`sheet`、`sourceRow`、`generatedPath`、`rowFingerprint`、`sourceExcelSha256` 和 `status`。`status` 可为 `materialized`、`changed`、`unchanged`、`empty_text`、`unsupported_sheet`、`conflict` 或 `failed`。只有 `materialized`、`changed` 和 `unchanged` 且目标 Markdown 存在时，才可进入源稿扫描；Excel 本身不作为误区拆解源稿。
+Excel 物化另写入 `98_处理记录/excel-materialization-log.jsonl`。每条记录必须包含 `sourceExcel`、`sheet`、`sourceRow`、`generatedPath`、`rowFingerprint`、`sourceExcelSha256` 和 `status`。`status` 可为 `materialized`、`changed`、`unchanged`、`empty_text`、`unsupported_sheet`、`conflict` 或 `failed`。只有 `materialized`、`changed` 和 `unchanged` 且目标 Markdown 存在时，才可进入源稿扫描；Excel 本身不作为少走弯路源稿。
 
 Excel 生成的 Markdown 进入 V4 后，正式 `processing-log.jsonl` 还必须记录 `sourceKind: "excel_row"`、稳定的 `sourceIdentity`（行指纹）、`sourceExcel`、`sourceSheet`、`sourceRow` 和分配的 `queuePosition`。串行门禁以 `queuePosition` 为准，不得根据文件名中的数字推断顺序；传统 `经纬 (N).md` 记录继续使用既有 `sourceSequence` 兼容。
 

@@ -32,15 +32,15 @@ Thumbs.db
 **/*.xlsm
 
 # The local workspace is the template source, but real data stays ignored.
-!workspaces/误区拆解/
-!workspaces/误区拆解/README.md
-!workspaces/误区拆解/workspace.yaml
-!workspaces/误区拆解/01_源知识库/
-!workspaces/误区拆解/01_源知识库/README.md
-!workspaces/误区拆解/01_源知识库/*.md.template
-!workspaces/误区拆解/02_误区卡片/
-!workspaces/误区拆解/02_误区卡片/README.md
-!workspaces/误区拆解/02_误区卡片/*.md.template
+!workspaces/少走弯路工作区/
+!workspaces/少走弯路工作区/README.md
+!workspaces/少走弯路工作区/workspace.yaml
+!workspaces/少走弯路工作区/01_源知识库/
+!workspaces/少走弯路工作区/01_源知识库/README.md
+!workspaces/少走弯路工作区/01_源知识库/*.md.template
+!workspaces/少走弯路工作区/02_误区卡片/
+!workspaces/少走弯路工作区/02_误区卡片/README.md
+!workspaces/少走弯路工作区/02_误区卡片/*.md.template
 
 # Keep generated and private office documents out of the repository.
 **/*.docx

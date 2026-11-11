@@ -225,7 +225,7 @@ Skill 包       = 可分享的能力
 通用规则：
 
 - `skills/` 保存可公开的 Skill 源包；
-- `workspaces/误区拆解/` 是本机唯一工作区来源；发布时从中提取干净框架，不上传其中的个人资料；
+- `workspaces/少走弯路工作区/` 是本机唯一工作区来源；发布时从中提取干净框架，不上传其中的个人资料；
 - 真实文稿、Excel、卡片、日志和审核证据不进入 Skill 包；
 - Skill 不依赖固定 E 盘或用户名路径；
 - 将整个仓库复制到其他位置后，应通过工作区配置重新定位数据目录。
@@ -266,7 +266,7 @@ python -B tools\test_release_install.py --root E:\Future2046-Skills
 | 目录或文件 | 用途 |
 |---|---|
 | [`skills/`](skills/) | Skill 源包 |
-| [`workspaces/误区拆解/`](workspaces/误区拆解/) | 本机工作区来源；发布时提取为同路径的干净框架 |
+| [`workspaces/少走弯路工作区/`](workspaces/少走弯路工作区/) | 本机工作区来源；发布时提取为同路径的干净框架 |
 | [`shared/skill-registry.yaml`](shared/skill-registry.yaml) | 所有正式 Skill 的登记真源 |
 | [`docs/新手入门.md`](docs/新手入门.md) | 面向第一次使用者的项目入门说明 |
 | [`tools/`](tools/) | 校验、目录生成、打包和 Codex 安装工具 |

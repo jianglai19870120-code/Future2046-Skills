@@ -1,6 +1,6 @@
-workspace_name: "误区拆解"
+workspace_name: "少走弯路工作区"
 technical_skill_name: "Future2046-avoid-pitfalls"
-display_name: "误区拆解"
+display_name: "少走弯路工作区"
 schema_version: 1
 
 source_root: "01_源知识库"

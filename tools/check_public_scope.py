@@ -7,7 +7,11 @@ from pathlib import Path
 
 FORBIDDEN_DIRS = {"01_源知识库", "02_误区卡片", "98_处理记录", "99_归档", ".obsidian", "__pycache__"}
 FORBIDDEN_SUFFIXES = {".xlsx", ".xls", ".xlsm", ".pyc", ".pyo"}
-FORBIDDEN_TEXT = ("E:" + "\\误区拆解工作区", "C:" + "\\Users\\Administrator", "E:" + "/误区拆解工作区")
+FORBIDDEN_TEXT = (
+    "E:" + "\\Future2046-Skills\\workspaces\\少走弯路工作区",
+    "C:" + "\\Users\\Administrator",
+    "E:" + "/Future2046-Skills/workspaces/少走弯路工作区",
+)
 
 
 def check(root: Path, ignore_generated_caches: bool = False) -> list[str]:

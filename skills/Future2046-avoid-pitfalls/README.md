@@ -42,13 +42,13 @@
 
 ## 使用前提
 
-工作区根目录必须有 `workspace.yaml`。可以从发布包中的 `workspaces/误区拆解` 复制并改名，也可以为自己的目录创建同样的配置。
+工作区根目录必须有 `workspace.yaml`。可以从发布包中的 `workspaces/少走弯路工作区` 复制并改名，也可以为自己的目录创建同样的配置。
 
 Skill 源包不包含任何个人源稿、误区卡片或处理记录。详细规则从 [SKILL.md](SKILL.md) 开始，运行权限边界见 [authorization-boundaries.md](references/authorization-boundaries.md)。
 
 ## 输入与执行
 
-复制发布包中的 `workspaces/误区拆解` 为自己的工作区，放入 Markdown、TXT、DOCX、PDF 或 Excel 资料。首次使用 Excel 时先安装 `python -m pip install -r requirements.txt`；只处理文本时可以不安装 Excel 依赖。调用 `$future2046-avoid-pitfalls` 并提供工作区路径。未指定文件时先展示待处理清单，用户确认范围后依次处理。
+复制发布包中的 `workspaces/少走弯路工作区` 为自己的工作区，放入 Markdown、TXT、DOCX、PDF 或 Excel 资料。首次使用 Excel 时先安装 `python -m pip install -r requirements.txt`；只处理文本时可以不安装 Excel 依赖。调用 `$future2046-avoid-pitfalls` 并提供工作区路径。未指定文件时先展示待处理清单，用户确认范围后依次处理。
 
 Excel 中每行“作品文案”先形成独立 Markdown；校正识别错误和语义分段后，按稳定源稿队列识别候选、通过五道门槛、文内及全局去重、生成初稿、独立润色、独立审核、正式提交并验证。当前篇取得合法终态后才能开始下一篇。详见 [Excel 规则](references/excel-materialization-rules.md)、[源稿队列规则](references/source-queue-rules.md)、[校正规则](references/transcription-normalization-rules.md)和[产物契约](references/artifact-contracts.md)。
 
