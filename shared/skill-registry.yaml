@@ -1,0 +1,59 @@
+schema_version: 1
+registry_name: "Future2046 Skill Registry"
+release_version: "1.3.5"
+framework:
+  router_id: "future2046"
+  router_package_directory: "Future2046-router"
+  member_id_prefix: "future2046-"
+  source_of_truth: "shared/skill-registry.yaml"
+  maintenance_rule: "登记、入口目录、安装、发布和校验均以本文件为准"
+skills:
+  - id: "future2046"
+    package_directory: "Future2046-router"
+    display_name: "Future2046 入口"
+    description: "Future2046 Skills 的统一入口；不知道用哪个 Skill、首次使用、需要多 Skill 衔接或希望重新选择方法时使用。"
+    version: "1.3.5"
+    status: "stable"
+    entrypoint: "SKILL.md"
+    package_path: "skills/Future2046-router"
+    workspace_template: ""
+    supported_agents:
+      - "codex"
+    runtime:
+      python: ">=3.11,<3.14"
+    distribution: "public"
+    tests:
+      - "evals/test_discovery.py"
+  - id: "future2046-avoid-pitfalls"
+    package_directory: "Future2046-avoid-pitfalls"
+    display_name: "少走弯路"
+    description: "围绕具体行业读取文章、书籍、访谈、视频文稿和 Excel 行级源稿，提前识别行业常见坑，帮助用户避坑、少走弯路，识别有原文依据的独立误区，并经过 V4 流程沉淀可检索、可调用的避坑误区卡。"
+    version: "1.3.5"
+    status: "stable"
+    entrypoint: "SKILL.md"
+    package_path: "skills/Future2046-avoid-pitfalls"
+    workspace_template: "workspaces/误区拆解"
+    supported_agents:
+      - "codex"
+    runtime:
+      python: ">=3.11,<3.14"
+    distribution: "public"
+    tests:
+      - "evals/test_pipeline_v4.py"
+      - "evals/test_commit_recovery.py"
+  - id: "future2046-skill-maker"
+    package_directory: "Future2046-skill-maker"
+    display_name: "Skill 制作器"
+    description: "创建、改进、测试、版本同步和发布 Future2046 Skill；先形成可确认方案，再按授权范围写入并验证。"
+    version: "1.3.5"
+    status: "stable"
+    entrypoint: "SKILL.md"
+    package_path: "skills/Future2046-skill-maker"
+    workspace_template: ""
+    supported_agents:
+      - "codex"
+    runtime:
+      python: ">=3.11,<3.14"
+    distribution: "public"
+    tests:
+      - "evals/test_boundaries.py"

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Skill 制作器"
+  short_description: "创建、改进、测试和发布 Future2046 Skill"
+  default_prompt: "使用 $future2046-skill-maker 处理 Skill 创建、改进、测试、版本同步或发布任务。先读取仓库现场，形成方案并等待确认，再按授权范围执行和验证。"

@@ -1,0 +1,14 @@
+workspace_name: "误区拆解"
+technical_skill_name: "Future2046-avoid-pitfalls"
+display_name: "误区拆解"
+schema_version: 1
+
+source_root: "01_源知识库"
+card_root: "02_误区卡片"
+record_root: "98_处理记录"
+archive_root: "99_归档"
+
+supported_categories:
+  - "个人IP"
+  - "创业搞钱"
+  - "成长逆袭"

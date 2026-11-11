@@ -1,0 +1,4 @@
+interface:
+  display_name: "Future2046 入口"
+  short_description: "根据任务选择并执行已安装的 Future2046 Skill"
+  default_prompt: "使用 $future2046 处理我当前的任务。先查看已安装的正式 Skill，再选择所需能力并在当前对话继续执行。"

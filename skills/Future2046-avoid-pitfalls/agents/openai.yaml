@@ -1,0 +1,5 @@
+interface:
+  display_name: "少走弯路"
+  short_description: "先提取 Excel 行级源稿，再逐篇生成并审核误区卡"
+  default_prompt: "使用 $future2046-avoid-pitfalls 处理指定工作区。先读取 workspace.yaml 并用 source_queue.py 建立稳定队列；发现 Excel 时先按作品文案列逐行物化为 Markdown，再按 v4 阶段产物顺序逐篇处理；独立审核必须保存真实工具响应、调用信封和最终去重证据，通过后由 commit_run.py 提交。当前篇完成并验证后才能开始下一篇；中断时保留锁并运行 recover_run.py。"
+  normalization_note: "进入误区判断前，必须依次完成错别字校正、标点断句和语义分段；写入完整 paragraphReflow 证据并通过机器校验后，才能进入候选识别。"

@@ -1,0 +1,48 @@
+# Future2046 public repository boundary
+/workspaces/*
+!/workspaces/.gitkeep
+!/workspaces/README.md
+/dist/
+/build/
+/coverage/
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+*.tmp
+*.bak
+*.log
+.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example
+
+# Never publish local workspace assets, even if they are copied below a public folder.
+**/01_源知识库/**
+**/02_误区卡片/**
+**/98_处理记录/**
+**/99_归档/**
+**/.obsidian/**
+**/*.xlsx
+**/*.xls
+**/*.xlsm
+
+# The local workspace is the template source, but real data stays ignored.
+!workspaces/误区拆解/
+!workspaces/误区拆解/README.md
+!workspaces/误区拆解/workspace.yaml
+!workspaces/误区拆解/01_源知识库/
+!workspaces/误区拆解/01_源知识库/README.md
+!workspaces/误区拆解/01_源知识库/*.md.template
+!workspaces/误区拆解/02_误区卡片/
+!workspaces/误区拆解/02_误区卡片/README.md
+!workspaces/误区拆解/02_误区卡片/*.md.template
+
+# Keep generated and private office documents out of the repository.
+**/*.docx
+**/*.pdf
+**/*.pptx

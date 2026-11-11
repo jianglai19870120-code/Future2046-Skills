@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "release_version": "1.3.5",
+  "skills": [
+    {
+      "id": "future2046-avoid-pitfalls",
+      "package_directory": "Future2046-avoid-pitfalls",
+      "display_name": "少走弯路",
+      "description": "扫描并校正用户提供的文字，从原文内部证据识别 0-N 个独立误区，帮助用户提前识别行业常见坑、避坑并少走弯路，围绕具体行业建立可检索的避坑知识库，再经过口语化润色和独立审核后生成统一误区卡。当用户要求拆解误区、找出行业常见坑或把文章、书籍、访谈、新闻稿、视频文稿、Excel 行文稿拆成误区卡时使用；只要求总结、改写或外部事实核查时不使用。",
+      "handoff": {
+        "accepts": "有可分析的文字、文稿文件或工作区，用户要求识别单篇文稿中的误区，或围绕具体行业持续沉淀避坑知识库、调用已有误区卡。",
+        "produces": "经完整 V4 流程审核和落盘的误区卡，或按观点检索出的已有卡片。",
+        "excludes": "普通总结、独立事实核查、绕过审核的卡片生成与发布。"
+      },
+      "skill_sha256": "a1f67ddec694f24d18edf7ddfdfdc715ba4309dc8b2f1ee39e2f90f1cf582251"
+    },
+    {
+      "id": "future2046-skill-maker",
+      "package_directory": "Future2046-skill-maker",
+      "display_name": "Skill 制作器",
+      "description": "创建、改进、测试、版本同步和发布 Future2046 Skill；先形成可确认方案，再按授权范围写入，并用结构、行为和发布包校验确认结果。",
+      "handoff": {
+        "accepts": "用户要新建 Skill、修改已有 Skill、检查 Skill、准备发布或验证安装。",
+        "produces": "可回退的 Skill 修改方案、已验证的 Skill 包、版本同步结果或发布前检查报告。",
+        "excludes": "不替用户决定业务目标，不绕过确认，不自动创建远程仓库或推送远端。"
+      },
+      "skill_sha256": "790681668122d4bc7bf479e9cff6c084e83defc2fd5f9379861235c3e88e25fb"
+    }
+  ]
+}
