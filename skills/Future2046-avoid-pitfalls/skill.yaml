@@ -2,7 +2,7 @@ schema_version: 1
 id: "future2046-avoid-pitfalls"
 package_directory: "Future2046-avoid-pitfalls"
 display_name: "少走弯路"
-version: "1.3.6"
+version: "1.3.7"
 entrypoint: "SKILL.md"
 workspace_template: "workspaces/少走弯路工作区"
 supported_agents:

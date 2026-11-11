@@ -76,6 +76,8 @@ source_scan → transcription_normalization → misconception_candidate_identifi
 
 ## 串行与可恢复提交硬门禁
 
+单篇源稿的机械启动、快照和首个回执可以使用 `scripts/run_single_source.py init`，它只建立锁、run、源稿快照和 `source_scan` 回执，不替代候选识别、口语化润色或独立审核，也不会自动伪造语义阶段。运行失败且需要暂停串行批次时使用 `recover_run.py --fail`；只有明确放弃该稿并推进批次时才使用 `--skip`。
+
 启动每篇时创建 `98_处理记录/active-run.json` 和唯一 `pipeline.lock`。每篇文稿拥有独立 `runs/<runId>/run.json`，且只能有一个 `in_progress` 源稿。批量使用同一 `batchId`；
 下一篇启动前必须证明上一篇在同批次取得新版 `completed` 或有失败产物支撑的早期 `skipped` 终态。完成篇还须提交日志为 `committed`，卡片、索引和处理记录一致。中断时保留 run 状态，不得启动下一篇。
 存在未解决提交日志时，先用 `scripts/recover_run.py --rollback` 校验并回滚；`--pause` 保留锁，不能绕过当前篇。
@@ -137,15 +139,14 @@ Excel 物化完成后，每个 Markdown 仍必须逐篇通过全部 V4 阶段，
 所有进入 V4 的源稿都必须先取得包含真实 `paragraphReflow` 记录的 `transcription_normalization` 阶段回执。`.md` 文件按确认范围覆盖，Excel 行 Markdown 只校正“全文”段落；其他格式在原目录生成同名 `.md`，原文件保留。
 若存在大量关键识别错误，无法可靠恢复人物、动作或因果关系，则跳过该稿件，记录 `status: "skipped"`、`failedStage: "transcription_normalization"` 和错误原因，不覆盖、不拆解；批量任务继续下一篇。
 若任一生产阶段出现无法可靠完成的错误，也必须保留失败产物和具体原因；按用户已确认的异常处理规则，可将当前稿件登记为 `status: "skipped"`、写明 `failedStage` 和失败证据，不生成不合格卡片，然后释放串行锁继续下一篇。
-审核连续未通过达到上限后，若用户选择跳过，只能通过 `recover_run.py --skip` 写入带失败证据的合法跳过终态，不能伪造 `completed`。
+审核连续未通过达到上限后，可以通过 `recover_run.py --fail` 写入失败终态并暂停串行批次，也可以在用户明确决定放弃该稿时通过 `--skip` 推进批次；两者都必须带失败证据，不能伪造 `completed`。
 
 校正对象必须是整篇可分析正文，不是摘要或摘录。段落重排必须把挤在一起的全文按语义单元拆成独立 Markdown 段落，并使用空行明确分隔；不能保留一整段后仅在回执中声称完成分段，也不能用后续口语化润色代替校正阶段的分段。原文已经合理分段时，也要检查并记录无需调整。
 
 段落重排必须留下实际段落清单：每个校正后的语义段落都要有序号、段落作用和边界说明，清单数量必须等于校正稿中的实际正文段落数。段落清单不是摘要，不得用概括句代替原文段落；它只用于证明全文已经按语义单元重新排版。
-缺少段落清单、清单数量不一致，或校正稿正文仍只有一个明显挤压多个语义单元的段落时，`transcription_normalization` 不得通过。
+缺少段落清单、清单数量不一致，或长正文仍只有一个明显挤压多个语义单元的段落时，`transcription_normalization` 不得通过；确需保留单段时必须写明 `singleParagraphJustification`。
 
-新 V4 run 还必须把分段后的完整 Markdown 原子覆盖回原源文件，再从写回后的文件继续候选识别。回执必须记录 `sourceWriteback: true`、`sourceWritebackPath` 和机器计算的 `sourceWritebackSha256`；
-源文件哈希必须与 run 内 `corrected.md` 一致。只生成 run 内副本而不覆盖源文件，不得进入下一阶段。
+新 V4 run 默认只在当前 run 内保存分段后的完整 Markdown，源文件保持不变；候选识别从 run 内校正稿继续。只有工作区 `workspace.yaml` 明确设置 `allow_source_writeback: true` 时，才允许把校正稿原子覆盖回源文件，并记录 `sourceWriteback`、`sourceWritebackPath` 和机器计算的 `sourceWritebackSha256`。这样既保留原稿，也避免运行过程意外改写用户资料。
 
 Excel 物化生成的 Markdown 只校正“全文”内容，不修改链接、标题、来源字段或行指纹。原始 Excel 始终保留，后续卡片的 `source_address` 指向生成的 Markdown。
 

@@ -87,13 +87,12 @@ paragraph_reflow: true
 
 ## V4 源文件写回门禁
 
-校正和语义分段完成后，必须把完整校正后的 Markdown 原子写回原源文件，再启动误区候选识别。不能只把校正稿放在 `runs/<runId>/corrected.md` 中而继续使用未校正的源文件。产物必须记录：
+校正和语义分段完成后，默认把完整校正后的 Markdown 保存在当前 run 内，再从校正稿启动误区候选识别；源文件保持不变。只有工作区明确设置 `allow_source_writeback: true` 时，才允许将校正稿原子写回原源文件。产物必须记录：
 
 ```json
 {
-  "sourceWriteback": true,
-  "sourceWritebackPath": "01_源知识库/视频文稿/示例.md",
-  "sourceWritebackSha256": "由机器计算的源文件哈希"
+  "normalizedSourcePath": "98_处理记录/runs/<runId>/corrected/示例.md",
+  "sourceWriteback": false
 }
 ```
 

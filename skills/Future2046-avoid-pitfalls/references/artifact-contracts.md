@@ -6,7 +6,7 @@
 
 ## 生产路径契约
 
-所有 V4 过程文件必须位于 `workspace.yaml` 指定的 `record_root`。运行证据只能写入 `<record_root>/runs/<runId>/`，其中审核文件位于 `review/`，提交准备文件位于 `submission/`。卡片正式输出只能写入 `card_root`，源稿校正只能写回 `source_root` 中当前源文件。C 盘用户目录、系统 Temp、仓库根目录和 Skill 包目录中的文件不属于有效生产证据；生产脚本不得使用系统临时目录，也不得动态生成补救 Python 脚本。
+所有 V4 过程文件必须位于 `workspace.yaml` 指定的 `record_root`。运行证据只能写入 `<record_root>/runs/<runId>/`，其中审核文件位于 `review/`，提交准备文件位于 `submission/`。卡片正式输出只能写入 `card_root`。默认 `allow_source_writeback: false`，校正稿保存在当前 run 内并作为后续输入；只有工作区明确开启写回时，才允许原子覆盖源文件。C 盘用户目录、系统 Temp、仓库根目录和 Skill 包目录中的文件不属于有效生产证据；生产脚本不得使用系统临时目录，也不得动态生成补救 Python 脚本。
 
 Excel 物化是源稿进入 V4 前的预处理，不替代 V4 阶段。物化报告和 `excel-materialization-log.jsonl` 必须绑定 `sourceKind: "excel_row"`、`sourceIdentity`、`sourceExcel`、`sourceSheet`、`sourceRow` 和 `rowFingerprint`；物化失败不得生成源稿或误区卡。
 
@@ -15,7 +15,7 @@ Excel 物化是源稿进入 V4 前的预处理，不替代 V4 阶段。物化报
 | 阶段 | 必须保留的真实产物 |
 | --- | --- |
 | `source_scan` | 源文件快照及其路径、原始文件哈希；建立回执时快照字节必须与源文件一致，提交前再次确认源文件未变化。 |
-| `transcription_normalization` | 当前 run 的校正后 Markdown、逐项变更清单、必需的语义分段记录 `paragraphReflow`，以及把完整分段稿原子写回原 `sourcePath` 的 `sourceWriteback`、`sourceWritebackPath`、`sourceWritebackSha256`；机器必须确认源文件与校正稿哈希一致。 |
+| `transcription_normalization` | 当前 run 的校正后 Markdown、逐项变更清单和必需的语义分段记录 `paragraphReflow`；默认不覆盖源文件，写回仅在工作区 `allow_source_writeback: true` 时启用。长单段正文必须完成真实分段，或留下明确的单段保留理由。 |
 | `misconception_candidate_identification` | 候选列表、唯一候选 ID、错误认知、认知与问题的原文片段及位置；每个候选还要有 `viewpointPattern`、`patternSelectionReason`；`candidateCoverage` 必须证明全文所有语义段落和主题都已扫描，零候选需说明。 |
 | `five_gate_judgment` | 覆盖全部候选的五门逐项布尔判断和理由，并绑定候选产物。 |
 | `intra_document_deduplication` | 同篇候选的逐项比较、合并映射及保留集合，绑定五门产物。 |
@@ -60,7 +60,7 @@ Excel 物化是源稿进入 V4 前的预处理，不替代 V4 阶段。物化报
 }
 ```
 
-`sourceEvidence` 的段落和句子范围必须能回到校正稿正文；`isContinuous` 和 `contextComplete` 任一为 `false` 时不得审核通过。没有合格误区时仍需保留零候选理由，不得伪造观点或证据字段。
+`sourceEvidence` 的段落和句子范围必须能回到校正稿正文；新 V4 run 还必须提供 `evidenceSpans`，记录认知证据与问题证据的字符起止位置，机器会逐字核对、检查顺序和重叠。`isContinuous` 和 `contextComplete` 任一为 `false` 时不得审核通过。没有合格误区时仍需保留零候选理由，不得伪造观点或证据字段。
 
 ---
 

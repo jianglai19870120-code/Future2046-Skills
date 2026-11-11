@@ -2,6 +2,7 @@ workspace_name: "少走弯路工作区"
 technical_skill_name: "Future2046-avoid-pitfalls"
 display_name: "少走弯路工作区"
 schema_version: 1
+allow_source_writeback: false
 
 source_root: "01_源知识库"
 card_root: "02_误区卡片"

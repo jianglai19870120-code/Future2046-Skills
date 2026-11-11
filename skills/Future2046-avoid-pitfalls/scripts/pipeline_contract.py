@@ -5,7 +5,12 @@ import hashlib
 import json
 import difflib
 import re
+import sys
 from pathlib import Path
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 
 WORKSPACE_DEFAULTS = {
@@ -16,6 +21,23 @@ WORKSPACE_DEFAULTS = {
 }
 
 REQUIRED_WORKSPACE_KEYS = tuple(WORKSPACE_DEFAULTS) + ("technical_skill_name",)
+
+
+def workspace_setting(root: Path, key: str, default=None):
+    """Read a small scalar setting without turning workspace.yaml into a YAML dependency."""
+    config = root.resolve() / "workspace.yaml"
+    pattern = re.compile(rf"^{re.escape(key)}:\s*(?:\"([^\"]*)\"|'([^']*)'|([^#\s][^#]*?))\s*$")
+    for raw in config.read_text(encoding="utf-8").splitlines():
+        match = pattern.match(raw)
+        if not match:
+            continue
+        value = next(part for part in match.groups() if part is not None).strip()
+        if value.casefold() in {"true", "yes", "on"}:
+            return True
+        if value.casefold() in {"false", "no", "off"}:
+            return False
+        return value
+    return default
 
 
 def workspace_layout(root: Path) -> dict[str, str]:
@@ -189,6 +211,11 @@ def check_stage(root: Path, run: dict, stage: str, artifact: Path, previous_hash
             raise ValueError("paragraphReflow paragraph numbering is not sequential")
         if reflow["afterParagraphCount"] != markdown_paragraph_count(corrected.read_text(encoding="utf-8")):
             raise ValueError("paragraphReflow afterParagraphCount differs from corrected Markdown")
+        corrected_text = corrected.read_text(encoding="utf-8")
+        if run.get("paragraphQualityRequired") and len(corrected_text) >= 800 and reflow["afterParagraphCount"] < 2:
+            justification = reflow.get("singleParagraphJustification")
+            if not isinstance(justification, str) or not justification.strip():
+                raise ValueError("long single-paragraph source requires paragraph reflow or explicit justification")
         if reflow["changed"] and not reflow["boundaries"]:
             raise ValueError("changed paragraph reflow requires boundaries")
         if not reflow["changed"] and reflow["boundaries"]:
@@ -207,7 +234,12 @@ def check_stage(root: Path, run: dict, stage: str, artifact: Path, previous_hash
         if corrected.suffix.lower() != ".md":
             raise ValueError("corrected text must be Markdown")
         normalized = inside(root, data.get("normalizedSourcePath", run["sourcePath"]))
-        if normalized.suffix.lower() != ".md" or normalized.parent != source.parent or normalized.stem != source.stem:
+        if normalized.suffix.lower() != ".md":
+            raise ValueError("normalized source must be Markdown")
+        if not run.get("normalizationWritebackRequired"):
+            if normalized != corrected and normalized != source:
+                raise ValueError("without source writeback, normalized source must be the run-local corrected Markdown")
+        elif normalized.parent != source.parent or normalized.stem != source.stem:
             raise ValueError("normalized source must be same-name Markdown beside original")
         if run.get("normalizationWritebackRequired"):
             if data.get("sourceWriteback") is not True or data.get("sourceWritebackPath") != run["sourcePath"]:
@@ -252,6 +284,25 @@ def check_stage(root: Path, run: dict, stage: str, artifact: Path, previous_hash
             roles = evidence.get("roles")
             if not isinstance(roles, dict) or roles.get("cognitive") is not True or roles.get("problem") is not True:
                 raise ValueError("candidate sourceEvidence must cover cognitive and problem evidence")
+            if run.get("evidenceSpanRequired"):
+                spans = evidence.get("evidenceSpans")
+                if not isinstance(spans, list) or len(spans) < 2:
+                    raise ValueError("candidate evidence spans missing")
+                expected = {"sourceEvidence": candidate["sourceEvidence"], "problemEvidence": candidate["problemEvidence"]}
+                actual = []
+                for span in spans:
+                    if not isinstance(span, dict) or span.get("kind") not in expected:
+                        raise ValueError("candidate evidence span kind invalid")
+                    start, end = span.get("start"), span.get("end")
+                    if not isinstance(start, int) or not isinstance(end, int) or not 0 <= start < end <= len(body):
+                        raise ValueError("candidate evidence span bounds invalid")
+                    if body[start:end] != expected[span["kind"]]:
+                        raise ValueError("candidate evidence span text mismatch")
+                    actual.append((start, end, span["kind"]))
+                if {kind for _, _, kind in actual} != set(expected) or actual != sorted(actual):
+                    raise ValueError("candidate evidence spans are not ordered")
+                if actual[0][1] > actual[1][0]:
+                    raise ValueError("candidate evidence spans overlap")
         output = digest(artifact)
     elif stage == "five_gate_judgment":
         results = data.get("results")
@@ -290,6 +341,9 @@ def check_stage(root: Path, run: dict, stage: str, artifact: Path, previous_hash
         if stage == "global_deduplication_final" and data.get("result") != "passed":
             raise ValueError("final deduplication not passed")
         if stage == "global_deduplication_final":
+            review = prior_stage(root, run, "independent_review")
+            if review.get("reviewStatus") != "approved" or any(c.get("decision") != "approved" for c in review.get("cards", [])):
+                raise ValueError("final deduplication cannot proceed after a rejected or partial review")
             accepted = {r["candidateId"] for r in prior_stage(root, run, "global_deduplication_pre")["results"] if r["dedupStatus"] in {"new", "related"}}
             if {r["candidateId"] for r in data["results"]} != accepted or any(r["dedupStatus"] == "duplicate" for r in data["results"]):
                 raise ValueError("final deduplication does not clear all submitted candidates")
@@ -363,7 +417,7 @@ def check_stage(root: Path, run: dict, stage: str, artifact: Path, previous_hash
         requested = {c.get("path"): c.get("sha256") for c in request_data.get("cards", [])}
         if request_data.get("runId") != run["runId"] or request_data.get("sourcePath") != run["sourcePath"] or request_data.get("correctedSha256") != next(r["evidence"]["outputSha256"] for r in run["stageReceipts"] if r["stage"] == "transcription_normalization") or requested != {c["polishedPath"]: c["polishedSha256"] for c in polish_cards}:
             raise ValueError("review request does not freeze current source and polished cards")
-        if data.get("reviewStatus") not in {"approved", "rejected"} or data.get("reviewMode") not in {"subagent", "fresh_context"} or not data.get("reviewerInvocationId") or not data.get("reviewerId") or data.get("reviewerId") == run.get("producerId"):
+        if data.get("reviewStatus") not in {"approved", "rejected", "partial"} or data.get("reviewMode") not in {"subagent", "fresh_context"} or not data.get("reviewerInvocationId") or not data.get("reviewerId") or data.get("reviewerId") == run.get("producerId"):
             raise ValueError("independent review provenance missing")
         if data.get("reviewTool") not in {"multi_agent_v1", "isolated_context_runner"}:
             raise ValueError("review must identify an isolated reviewer tool")
@@ -391,11 +445,13 @@ def check_stage(root: Path, run: dict, stage: str, artifact: Path, previous_hash
         polished_paths = {c["polishedPath"] for c in prior_stage(root, run, "oral_polish")["cards"]}
         if {c.get("polishedPath") for c in data["cards"]} != polished_paths or len(data["cards"]) != len(polished_paths):
             raise ValueError("review does not cover all polished cards")
-        expected_decision = "approved" if data.get("reviewStatus") == "approved" else "rejected"
+        expected_decision = "approved" if data.get("reviewStatus") == "approved" else None
+        decisions = []
         for card in data["cards"]:
             path = run_file(root, run["runId"], card["polishedPath"])
-            if not card.get("cardId") or digest(path) != card.get("reviewedCardSha256") or card.get("decision") != expected_decision or not card.get("reason") or not card.get("sourceEvidenceSpan"):
+            if not card.get("cardId") or digest(path) != card.get("reviewedCardSha256") or card.get("decision") not in {"approved", "rejected"} or (expected_decision and card.get("decision") != expected_decision) or not card.get("reason") or not card.get("sourceEvidenceSpan"):
                 raise ValueError("reviewed card hash or judgment invalid")
+            decisions.append(card.get("decision"))
             if card.get("unchangedPolish") and not card.get("unchangedPolishAccepted"):
                 raise ValueError("unchanged polish lacks reviewer acceptance")
             if run.get("oralPolishContract") == "dialogue-v2":
@@ -403,8 +459,14 @@ def check_stage(root: Path, run: dict, stage: str, artifact: Path, previous_hash
                 if not isinstance(evidence, dict):
                     raise ValueError("dialogue-v2 oralSceneEvidence missing")
                 required = ("directAddress", "dialogueFeeling", "naturalConnectors", "sentenceRhythmVaried", "reportToneRemoved", "meaningPreserved", "actualRewriteCompleted")
-                if any(evidence.get(key) is not True for key in required):
-                    raise ValueError("dialogue-v2 oral scene review gate failed")
+                if any(key not in evidence or not isinstance(evidence.get(key), bool) for key in required):
+                    raise ValueError("dialogue-v2 oral scene review evidence is incomplete")
+        if data.get("reviewStatus") == "approved" and any(decision != "approved" for decision in decisions):
+            raise ValueError("approved review cannot contain rejected cards")
+        if data.get("reviewStatus") == "rejected" and (not decisions or any(decision != "rejected" for decision in decisions)):
+            raise ValueError("rejected review must reject every reviewed card")
+        if data.get("reviewStatus") == "partial" and not decisions:
+            raise ValueError("partial review must contain card decisions")
         if not data["cards"] and not data.get("zeroCardReason"):
             raise ValueError("zero-card review reason missing")
         output = digest(artifact)

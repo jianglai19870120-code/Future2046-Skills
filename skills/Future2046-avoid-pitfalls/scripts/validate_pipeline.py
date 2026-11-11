@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate extract-misconceptions hard-gate receipts and current card/index state."""
+"""Validate 少走弯路 hard-gate receipts and current card/index state."""
 from __future__ import annotations
 
 import argparse
@@ -147,7 +147,7 @@ def validate_card(workspace: Path, row: dict, index_by_id: dict, errors: list[st
 
 def validate_record(workspace: Path, record: dict, index_rows: list[dict], errors: list[str], require_full_run: bool = False) -> None:
     if record.get("pipelineVersion") == "v4-artifact":
-        if record.get("status") == "skipped":
+        if record.get("status") in {"skipped", "failed"}:
             validate_skipped_v4(workspace, record, errors)
             return
         validate_record_v4(workspace, record, index_rows, errors)
@@ -166,14 +166,14 @@ def validate_skipped_v4(workspace: Path, record: dict, errors: list[str]) -> Non
     if expected is None or [r.get("stage") for r in record.get("stageReceipts", [])] != expected:
         fail(f"{source}: invalid skipped stage position", errors)
     if record.get("cardCount") != 0 or record.get("cardPaths") != [] or not record.get("error"):
-        fail(f"{source}: skipped run lacks specific zero-card failure", errors)
+        fail(f"{source}: failed/skipped run lacks specific zero-card failure", errors)
     try:
         artifact = run_file(workspace, record["runId"], record["failureArtifactPath"])
         if digest(artifact) != record.get("failureArtifactSha256"):
             fail(f"{source}: failure artifact changed", errors)
         report = json.loads(artifact.read_text(encoding="utf-8"))
         if report.get("stage") != stage or report.get("reason") != record.get("error"):
-            fail(f"{source}: failure report differs from skipped record", errors)
+            fail(f"{source}: failure report differs from failed/skipped record", errors)
     except (OSError, ValueError, KeyError, TypeError) as exc:
         fail(f"{source}: failure artifact invalid: {exc}", errors)
 

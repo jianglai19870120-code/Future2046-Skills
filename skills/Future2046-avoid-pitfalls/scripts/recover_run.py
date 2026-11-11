@@ -91,6 +91,7 @@ def main() -> int:
     group.add_argument("--pause", action="store_true")
     group.add_argument("--resume", action="store_true")
     group.add_argument("--skip", action="store_true")
+    group.add_argument("--fail", action="store_true", help="mark the current run failed without advancing the serial batch")
     group.add_argument("--finalize", action="store_true")
     group.add_argument("--suspend-paused", action="store_true", help="release the global lock while preserving a paused run")
     parser.add_argument("--restart-stage", choices=["transcription_normalization", "misconception_candidate_identification", "five_gate_judgment", "intra_document_deduplication", "global_deduplication_pre", "card_draft_generation", "oral_polish", "independent_review", "global_deduplication_final"], help="reset a paused run from a repairable stage")
@@ -180,9 +181,9 @@ def main() -> int:
             if run["status"] != "paused":
                 raise ValueError("only paused run can resume")
             run["status"] = "in_progress"; atomic_json(run_path, run)
-        elif args.skip:
+        elif args.skip or args.fail:
             if not args.reason or not args.failed_stage or not args.failure_artifact:
-                raise ValueError("skip requires a failed stage, reason and failure artifact")
+                raise ValueError("skip/fail requires a failed stage, reason and failure artifact")
             if run["status"] not in ("in_progress", "paused") or journal:
                 raise ValueError("cannot skip a run during/after commit")
             pipeline_stages = ["source_scan", "transcription_normalization", "misconception_candidate_identification", "five_gate_judgment", "intra_document_deduplication", "global_deduplication_pre", "card_draft_generation", "oral_polish", "independent_review", "global_deduplication_final", "formal_card_write", "index_update", "processing_log_write", "completion_validation"]
@@ -196,14 +197,15 @@ def main() -> int:
             failure = read_json(failure_path)
             if failure.get("runId") != info["runId"] or failure.get("stage") != args.failed_stage or failure.get("reason") != args.reason:
                 raise ValueError("failure report does not match current run")
-            run.update({"status": "skipped", "failedStage": args.failed_stage, "error": args.reason,
+            terminal_status = "skipped" if args.skip else "failed"
+            run.update({"status": terminal_status, "failedStage": args.failed_stage, "error": args.reason,
                         "failureArtifactPath": args.failure_artifact, "failureArtifactSha256": digest(failure_path),
                         "processedAt": stamp(), "cardCount": 0, "cardPaths": []})
             atomic_json(run_path, run)
             with (records / "processing-log.jsonl").open("a", encoding="utf-8") as handle:
                 handle.write(json.dumps(run, ensure_ascii=False, separators=(",", ":")) + "\n")
                 handle.flush(); os.fsync(handle.fileno())
-            if run.get("batchId"):
+            if args.skip and run.get("batchId"):
                 batch_path = records / "batches" / f"{run['batchId']}.json"
                 batch = read_json(batch_path)
                 if batch.get("nextPosition") != run["sourceSequence"]:

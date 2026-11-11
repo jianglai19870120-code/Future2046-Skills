@@ -10,7 +10,7 @@ import re
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
-from pipeline_contract import check_stage, digest, record_path, run_file, workspace_path
+from pipeline_contract import check_stage, digest, record_path, run_file, workspace_path, workspace_setting
 
 STAGES = [
     "source_scan", "transcription_normalization", "misconception_candidate_identification",
@@ -138,7 +138,8 @@ def start(args: argparse.Namespace) -> int:
         if lock.exists():
             lock.unlink()
         raise
-    run = {"pipelineVersion": "v4-artifact", "oralPolishContract": "dialogue-v2", "normalizationWritebackRequired": True, "candidateEnumerationRequired": True, "viewpointPatternRequired": True, "runId": args.run_id, "batchId": args.batch_id, "producerId": args.producer_id, "sourcePath": source, "sourceSequence": seq, "queuePosition": seq, "status": "in_progress", "stageReceipts": [], "createdAt": stamp()}
+    allow_writeback = workspace_setting(root, "allow_source_writeback", False) is True
+    run = {"pipelineVersion": "v4-artifact", "oralPolishContract": "dialogue-v2", "normalizationWritebackRequired": allow_writeback, "candidateEnumerationRequired": True, "viewpointPatternRequired": True, "evidenceSpanRequired": True, "paragraphQualityRequired": True, "runId": args.run_id, "batchId": args.batch_id, "producerId": args.producer_id, "sourcePath": source, "sourceSequence": seq, "queuePosition": seq, "status": "in_progress", "stageReceipts": [], "createdAt": stamp()}
     run.update(source_metadata(source_path))
     write_json(run_dir / "run.json", run)
     write_json(active, {"runId": args.run_id, "sourcePath": source, "sourceSequence": seq, "queuePosition": seq, "status": "in_progress", "startedAt": run["createdAt"]})

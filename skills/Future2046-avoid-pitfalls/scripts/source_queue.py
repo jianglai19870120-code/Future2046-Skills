@@ -12,7 +12,9 @@ from pathlib import Path
 from pipeline_contract import workspace_path, workspace_rel_path
 
 SOURCE_SUFFIXES = {".md", ".txt", ".docx", ".pdf"}
-TERMINAL = {"completed", "skipped", "failed"}
+# A failed run is not an accepted queue outcome.  Keep it visible as the next
+# source until the operator explicitly repairs, skips, or resumes it.
+TERMINAL = {"completed", "skipped"}
 
 
 def is_source_instruction(path: Path) -> bool:

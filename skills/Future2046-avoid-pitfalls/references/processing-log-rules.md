@@ -46,7 +46,7 @@ Excel 生成的 Markdown 进入 V4 后，正式 `processing-log.jsonl` 还必须
 
 候选卡和润色卡保留在当前 run 的 staging 中。提交前冻结已审核的 polished 字节，重算哈希并核对 staging、目标文件名、索引记录及正式目录现状。`commit_run.py` 独占锁，先准备旧卡、索引、日志和 run 的备份及 `commit-journal.json`，再依次写正式卡、索引、完成记录和校验结果。这里的“原子提交”指**对外只承认通过最终校验且 journal 为 `committed` 的整次提交**；跨多个文件的写入不是单一文件系统事务，可能在中途留下部分新文件。
 
-提交失败或进程中断时，保留锁、active run、staging、备份和 journal；不得手工标记 `completed`、释放锁、启动下一篇或再次盲目提交。先按 journal 核对各文件实际哈希与备份，再调用 `recover_run.py --rollback` 恢复旧卡、索引、日志和 run；如发现外部改动则保持阻塞并报告。回滚完成后当前 run 仍持有锁，可以修复产物后重试。早期无法可靠校正时，`recover_run.py --skip --failed-stage transcription_normalization --reason ...` 会记录跳过并释放锁。
+提交失败或进程中断时，保留锁、active run、staging、备份和 journal；不得手工标记 `completed`、启动下一篇或再次盲目提交。先按 journal 核对各文件实际哈希与备份，再调用 `recover_run.py --rollback` 恢复旧卡、索引、日志和 run；如发现外部改动则保持阻塞并报告。需要暂停串行批次时使用 `recover_run.py --fail --failed-stage ... --reason ... --failure-artifact ...`，它记录失败、释放锁但不推进 batch 指针；只有用户明确放弃当前稿时才使用 `--skip` 推进批次。早期无法可靠校正时，`recover_run.py --skip --failed-stage transcription_normalization --reason ...` 会记录跳过并释放锁。
 
 ## 审核与终态
 

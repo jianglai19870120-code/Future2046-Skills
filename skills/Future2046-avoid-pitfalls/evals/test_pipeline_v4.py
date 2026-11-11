@@ -118,7 +118,11 @@ class PipelineV4Tests(unittest.TestCase):
                      "sourceEvidenceMeta": {"paragraphIds": [1], "startSentence": 1,
                                             "endSentence": 2, "roles": {"cognitive": True,
                                             "problem": True, "correction": False},
-                                            "isContinuous": True, "contextComplete": True},
+                                            "isContinuous": True, "contextComplete": True,
+                                            "evidenceSpans": [
+                                                {"kind": "sourceEvidence", "start": BODY.index("有人认为努力就一定成功。"), "end": BODY.index("有人认为努力就一定成功。") + len("有人认为努力就一定成功。")},
+                                                {"kind": "problemEvidence", "start": BODY.index("努力也可能失败。"), "end": BODY.index("努力也可能失败。") + len("努力也可能失败。")},
+                                            ]},
                      "viewpointPattern": "以为A就能B", "patternSelectionReason": "原文把努力直接当成成功的充分条件"}
         candidates, _ = self.record("misconception_candidate_identification", {"inputSha256": self.previous(), "correctedPath": corrected, "candidates": [candidate], "candidateCoverage": {"exhaustiveScan": True, "reviewedSegments": ["p1"], "themesReviewed": ["努力与结果"], "noMoreCandidatesConfirmed": True, "rejectedOrMergedCount": 0}})
         if target == "misconception_candidate_identification": return
