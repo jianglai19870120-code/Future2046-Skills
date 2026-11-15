@@ -27,10 +27,22 @@ def load_workspace(workspace: Path) -> dict:
         data = yaml.safe_load((workspace / "workspace.yaml").read_text(encoding="utf-8")) or {}
     except ImportError:
         data = {}
+        categories = []
+        in_categories = False
         for line in (workspace / "workspace.yaml").read_text(encoding="utf-8").splitlines():
+            if line.strip() == "supported_categories:":
+                in_categories = True
+                continue
+            if in_categories and re.match(r"^\s*-\s+", line):
+                categories.append(line.split("-", 1)[1].strip().strip('"\''))
+                continue
+            if in_categories and line and not line.startswith((" ", "\t")):
+                in_categories = False
             match = re.match(r"^(\w+):\s*[\"']?(.*?)[\"']?$", line)
             if match:
                 data[match.group(1)] = match.group(2)
+        if categories:
+            data["supported_categories"] = categories
     required = ("card_root", "record_root", "guide_root", "supported_categories")
     missing = [key for key in required if key not in data]
     if missing:
@@ -71,7 +83,10 @@ def parse_card(path: Path) -> dict:
         "cardId": str(meta.get("card_id", "")),
         "category": str(meta.get("category", "")),
         "title": title.group(1).strip(),
-        "scene": scene.group(1).strip(),
+        # Some legacy cards contain escaped line breaks (literal ``\\n``)
+        # in the scene body. Normalize them before splitting into Word
+        # paragraphs so the escape sequence cannot leak into the guide.
+        "scene": scene.group(1).strip().replace("\\r\\n", "\n").replace("\\n", "\n"),
         "sha256": sha256(path),
     }
 
@@ -208,16 +223,17 @@ def build_docx(output: Path, category: str, chapter_order: list[str], groups: di
         style._element.rPr.rFonts.set(qn("w:eastAsia"), "Microsoft YaHei")
         style.font.size = Pt(11)
         style.font.color.rgb = RGBColor(35, 35, 35)
-    red, black, gray = RGBColor(210, 0, 0), RGBColor(25, 25, 25), RGBColor(95, 95, 95)
+    red = RGBColor(210, 0, 0)
+    dark_red = RGBColor(192, 0, 0)
+    black, gray = RGBColor(25, 25, 25), RGBColor(95, 95, 95)
 
     title = doc.add_paragraph(style="Title")
     title.paragraph_format.space_before = Pt(115)
-    set_font(title.add_run(category), "Microsoft YaHei", 34, red, True)
-    sub = doc.add_paragraph(); set_font(sub.add_run("避坑指南"), "Microsoft YaHei", 24, black, True)
+    set_font(title.add_run(f"{category}避坑指南"), "Microsoft YaHei", 56, red, True)
     desc = doc.add_paragraph(); desc.paragraph_format.space_before = Pt(14)
-    set_font(desc.add_run("把复杂的内容误区，整理成可以快速浏览的判断地图"), "Microsoft YaHei", 12, gray)
+    set_font(desc.add_run(f"把复杂的{category}行业误区，整理成可以快速浏览的判断地图"), "Microsoft YaHei", 14, gray)
     brand = doc.add_paragraph(); brand.paragraph_format.space_before = Pt(80)
-    set_font(brand.add_run("姜来已来2046"), "Microsoft YaHei", 12, red, True)
+    set_font(brand.add_run("@姜来已来2046"), "Microsoft YaHei", 12, red, True)
     doc.add_page_break()
 
     heading = doc.add_paragraph(); heading.paragraph_format.space_after = Pt(18)
@@ -229,29 +245,32 @@ def build_docx(output: Path, category: str, chapter_order: list[str], groups: di
         chapter_index += 1
         chapter_cards = sum(len(items) for items in groups[chapter].values())
         p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(7); p.paragraph_format.keep_with_next = True
-        set_font(p.add_run(f"{chapter_index:02d}  {chapter}"), "Microsoft YaHei", 14, black, True)
-        set_font(p.add_run(f"    {chapter_cards} 条"), "Microsoft YaHei", 11, gray)
+        set_font(p.add_run(f"{chapter_index:02d}  {chapter}"), "Microsoft YaHei", 14, dark_red, True)
+        set_font(p.add_run(f"    {chapter_cards} 条"), "Microsoft YaHei", 11, dark_red)
         for subchapter, items in groups[chapter].items():
             q = doc.add_paragraph(); q.paragraph_format.left_indent = Cm(1.1); q.paragraph_format.space_after = Pt(2)
             set_font(q.add_run(f"{subchapter}  ·  {len(items)} 条"), "Microsoft YaHei", 10, gray)
     doc.add_page_break()
 
+    first_chapter = True
     for chapter in chapter_order:
         if chapter not in groups:
             continue
         h = doc.add_paragraph(); h.paragraph_format.space_after = Pt(12); h.paragraph_format.keep_with_next = True
+        if not first_chapter:
+            h.paragraph_format.page_break_before = True
+        first_chapter = False
         set_font(h.add_run(chapter), "Microsoft YaHei", 24, red, True)
         number = 0
         for subchapter, items in groups[chapter].items():
             label = doc.add_paragraph(); label.paragraph_format.space_before = Pt(10); label.paragraph_format.space_after = Pt(5); label.paragraph_format.keep_with_next = True
-            set_font(label.add_run(subchapter), "Microsoft YaHei", 13, black, True)
+            set_font(label.add_run(subchapter), "Microsoft YaHei", 13, dark_red, True)
             for card in items:
                 number += 1
                 p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(10); p.paragraph_format.space_after = Pt(3); p.paragraph_format.keep_with_next = True
                 set_font(p.add_run(f"{number}  {card['title']}"), "Microsoft YaHei", 13, black, True)
                 for paragraph in re.split(r"\n\s*\n", card["scene"]):
                     body = doc.add_paragraph(paragraph.strip()); body.paragraph_format.space_after = Pt(5); body.paragraph_format.line_spacing = 1.25
-        doc.add_page_break()
     output.parent.mkdir(parents=True, exist_ok=True)
     doc.save(output)
 
