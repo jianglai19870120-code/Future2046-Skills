@@ -18,6 +18,7 @@
 | `check_skill_registry.py` | 校验所有 Skill、元数据和工作区模板登记。 |
 | `check_version_consistency.py` | 校验根版本、注册表和包版本一致。 |
 | `generate_router_catalog.py` | 生成或校验统一入口的 Skill 路由目录。 |
+| `workspace_discovery.py` | 统一发现并校验 `workspaces/` 下的一级工作区。 |
 
 ## 仓库边界与质量
 

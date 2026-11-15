@@ -15,29 +15,26 @@ import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 from check_skill_registry import registry
+from workspace_discovery import discover_workspaces
 import yaml
 
 
 PUBLIC_FILES = ("README.md", "LICENSE", "NOTICE.md", "DATA-POLICY.md", "CONTRIBUTING.md", "VERSION", "CHANGELOG.md", "requirements.txt")
 
 
-def copy_clean_workspace(source: Path, destination: Path) -> None:
+def copy_clean_workspace(workspace, destination: Path) -> None:
     """Extract only the portable framework from a real local workspace."""
+    source = workspace.path
     config_path = source / "workspace.yaml"
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     destination.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source / "README.md", destination / "README.md")
     shutil.copy2(config_path, destination / "workspace.yaml")
-    roots = [value for key, value in config.items() if key.endswith("_root") and isinstance(value, str)]
-    for relative in roots:
+    for _, relative, source_dir in workspace.roots:
         target = Path(relative)
-        if target.is_absolute() or ".." in target.parts:
-            raise ValueError(f"invalid workspace root in {config_path}: {relative}")
         source_dir = source / target
         destination_dir = destination / target
         destination_dir.mkdir(parents=True, exist_ok=True)
-        if not source_dir.is_dir():
-            raise FileNotFoundError(f"workspace root missing: {source_dir}")
         # Keep only explanatory and format-template files. Never copy local data.
         for path in source_dir.rglob("*"):
             if not path.is_file() or path.name != "README.md" and not path.name.endswith(".md.template"):
@@ -46,6 +43,8 @@ def copy_clean_workspace(source: Path, destination: Path) -> None:
             target_file = destination_dir / relative_file
             target_file.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(path, target_file)
+    for _, relative in workspace.excluded_roots:
+        (destination / relative).mkdir(parents=True, exist_ok=True)
 
 
 def main() -> int:
@@ -74,13 +73,18 @@ def main() -> int:
         release_registry['skills'] = [entry for entry in release_registry['skills'] if entry.get('distribution') == 'public' and entry.get('status') == 'stable']
         (stage / 'shared' / 'skill-registry.yaml').write_text(
             yaml.safe_dump(release_registry, allow_unicode=True, sort_keys=False), encoding='utf-8')
+        workspaces = discover_workspaces(root)
+        registered_templates = {entry.get('workspace_template') for entry in release_registry['skills'] if entry.get('workspace_template')}
+        discovered_paths = {f"workspaces/{workspace.directory}" for workspace in workspaces}
+        missing_templates = sorted(registered_templates - discovered_paths)
+        if missing_templates:
+            raise FileNotFoundError(f"registered workspace template missing: {', '.join(missing_templates)}")
         for entry in release_registry['skills']:
             package_path = entry['package_path']
             shutil.copytree(root / package_path, stage / package_path, dirs_exist_ok=True,
                 ignore=shutil.ignore_patterns('__pycache__', '*.pyc', '*.pyo'))
-            workspace_source = entry.get('workspace_template')
-            if workspace_source:
-                copy_clean_workspace(root / workspace_source, stage / workspace_source)
+        for workspace in workspaces:
+            copy_clean_workspace(workspace, stage / "workspaces" / workspace.directory)
         check = subprocess.run([sys.executable, str(root / "tools" / "check_public_scope.py"), "--root", str(stage)], text=True)
         if check.returncode:
             return check.returncode
@@ -103,6 +107,7 @@ def main() -> int:
             "package": output.name,
             "built_at": datetime.now(timezone.utc).isoformat(),
             "skills": [entry["id"] for entry in release_registry["skills"]],
+            "workspaces": [workspace.manifest_record("clean_template") for workspace in workspaces],
             "file_count": len(files),
             "total_size": sum(item["size"] for item in files),
             "files": files,

@@ -4,6 +4,7 @@ import os
 import sys
 import tempfile
 import unittest
+import ast
 from pathlib import Path
 from unittest.mock import patch
 
@@ -80,6 +81,16 @@ class PublisherTests(unittest.TestCase):
     def test_remote_normalization_accepts_https_and_ssh(self):
         self.assertEqual(repository_from_remote("https://github.com/a/b.git"), "a/b")
         self.assertEqual(repository_from_remote("git@github.com:a/b.git"), "a/b")
+
+    def test_formal_scripts_do_not_import_evals(self):
+        scripts = Path(__file__).resolve().parents[1] / "scripts"
+        for script in scripts.glob("*.py"):
+            tree = ast.parse(script.read_text(encoding="utf-8"), filename=str(script))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    self.assertFalse(any(name.name == "evals" or name.name.startswith("evals.") for name in node.names), script)
+                if isinstance(node, ast.ImportFrom) and node.module:
+                    self.assertFalse(node.module == "evals" or node.module.startswith("evals."), script)
 
 
 if __name__ == "__main__":

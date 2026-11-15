@@ -15,7 +15,7 @@ ROOT_TOOLS = {
     "brand_footer.py", "build_release.py", "check_future2046_purity.py",
     "check_program_boundaries.py", "check_public_scope.py",
     "check_skill_registry.py", "check_version_consistency.py",
-    "generate_router_catalog.py", "read_registry.py", "sync_codex_install.ps1",
+    "generate_router_catalog.py", "read_registry.py", "workspace_discovery.py", "sync_codex_install.ps1",
     "test_multiskill_framework.py", "test_release_install.py",
     "validate_repository.py", "verify_codex_install.py",
 }

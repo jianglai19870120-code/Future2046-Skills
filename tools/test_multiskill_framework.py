@@ -30,6 +30,11 @@ def must_fail(*args: str, cwd: Path) -> None:
         raise AssertionError(f"unexpected pass: {' '.join(args)}")
 
 
+def ignore_workspace_runtime(path: str, names: list[str]) -> list[str]:
+    ignored = {"__pycache__", "cache", ".运行缓存"}
+    return [name for name in names if name in ignored or name.endswith((".pyc", ".pyo"))]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", default=str(Path(__file__).resolve().parents[1]))
@@ -39,9 +44,9 @@ def main() -> int:
         sample.mkdir()
         for file in ("README.md", "LICENSE", "NOTICE.md", "DATA-POLICY.md", "CONTRIBUTING.md", "VERSION", "CHANGELOG.md", "requirements.txt", ".gitignore"):
             shutil.copy2(root / file, sample / file)
-        for folder in ("docs", "shared", "tools", "skills", "workspaces"):
+        for folder in ("docs", "shared", "tools", "skills", "workspaces", ".github"):
             shutil.copytree(root / folder, sample / folder,
-                            ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo"))
+                            ignore=ignore_workspace_runtime)
         name, sid = "Future2046-test-skill", "future2046-test-skill"
         pkg = sample / "skills" / name
         (pkg / "agents").mkdir(parents=True)

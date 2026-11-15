@@ -20,8 +20,8 @@ $future2046-toolbox-publisher 上传 Future2046-Skills
 
 ## 两种发布包
 
-- GitHub：复用根目录 `tools/build_release.py`，只发布公开大框架和可运行 Skill，并由内置 API 完成 Release 资产上传。
-- 飞书：从注册表动态聚合所有公开稳定 Skill 和登记工作区的原始资料、正式结果，排除处理记录、缓存、运行产物、测试文件和归档。
+- GitHub：复用根目录 `tools/build_release.py`，发布公开大框架、可运行 Skill 和 `workspaces/` 下所有工作区的干净模板，并由内置 API 完成 Release 资产上传。
+- 飞书：动态聚合 `workspaces/` 下所有合法工作区的原始资料、正式结果和目录结构，排除处理记录、缓存、运行产物、测试文件和归档。
 
 飞书资料包构建命令：
 
@@ -32,6 +32,8 @@ python scripts/build_member_package.py --root E:\Future2046-Skills --output dist
 `--workspace` 仍保留，用于单工作区测试和诊断。飞书由内置 `scripts/feishu_api.py` 通过 Windows 用户环境变量鉴权，采用原位替换唯一 ZIP block；运行时不依赖 `E:\AIIP获客工厂`。
 
 完整规则见 [发布规则](references/publishing-contract.md)。总控接口为 `scripts/publisher.py --mode check|prepare|publish|github|feishu`。
+
+`scripts/` 保存正式发布程序；`evals/` 保存已登记的门禁测试。测试不会参与实际上传，也不会被正式脚本导入。
 
 ---
 

@@ -55,17 +55,25 @@ class MemberPackageTests(unittest.TestCase):
             result = subprocess.run([sys.executable, str(SCRIPT), "--workspace", str(workspace), "--output", str(Path(temp) / "x.zip")], capture_output=True, text=True)
             self.assertNotEqual(result.returncode, 0)
 
-    def test_repository_mode_discovers_registered_stable_skill_and_manifest(self):
+    def test_repository_mode_discovers_all_workspaces_and_skills(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             (root / "tools").mkdir()
             (root / "skills" / "demo").mkdir(parents=True)
             (root / "shared").mkdir()
+            (root / "workspaces" / "demo-workspace" / "01_source").mkdir(parents=True)
+            (root / "workspaces" / "demo-workspace" / "02_output").mkdir()
+            (root / "workspaces" / "demo-workspace" / "workspace.yaml").write_text(
+                "workspace_name: Demo\ntechnical_skill_name: demo\nsource_root: 01_source\noutput_root: 02_output\n",
+                encoding="utf-8",
+            )
+            (root / "workspaces" / "demo-workspace" / "01_source" / "README.md").write_text("source\n", encoding="utf-8")
+            (root / "workspaces" / "demo-workspace" / "02_output" / "README.md").write_text("output\n", encoding="utf-8")
             (root / "VERSION").write_text("9.9.9\n", encoding="utf-8")
             (root / "README.md").write_text("root\n", encoding="utf-8")
             (root / "skills" / "demo" / "SKILL.md").write_text("demo\n", encoding="utf-8")
             (root / "shared" / "skill-registry.yaml").write_text(
-                "skills:\n  - id: demo\n    package_path: skills/demo\n    distribution: public\n    status: stable\n",
+                "schema_version: 1\nskills:\n  - id: demo\n    package_path: skills/demo\n    distribution: public\n    status: stable\n",
                 encoding="utf-8",
             )
             (root / "tools" / "check_skill_registry.py").write_text(

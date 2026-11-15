@@ -2,7 +2,7 @@ schema_version: 1
 id: "future2046-viral-root"
 package_directory: "Future2046-viral-root"
 display_name: "爆款词根"
-version: "1.3.28"
+version: "1.3.29"
 entrypoint: "SKILL.md"
 workspace_template: "workspaces/爆款词根工作区"
 supported_agents:

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "release_version": "1.3.28",
+  "release_version": "1.3.29",
   "skills": [
     {
       "id": "future2046-avoid-pitfalls",
@@ -36,7 +36,7 @@
         "produces": "双通道门禁报告、ZIP、逐文件 SHA-256 manifest、远程回读结果。",
         "excludes": "不把真实会员资料放入 GitHub；不把处理记录、缓存、运行产物、测试、归档、密钥或本机配置放入飞书包。"
       },
-      "skill_sha256": "34af6d08b524b716ab1793cd87e624e9c0da43047407e23b48d5f03c47dbf92d"
+      "skill_sha256": "e811358bcbc6dbebc0a6053f48a5d034583b9436d486c0471b6fa088c0165a89"
     },
     {
       "id": "future2046-viral-root",
