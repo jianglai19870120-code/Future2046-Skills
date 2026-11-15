@@ -6,7 +6,7 @@
 
 ## GitHub
 
-唯一构建器是 `tools/build_release.py`。公开 ZIP 只含公开框架、公开稳定 Skill、工具、规则、测试和干净模板；真实源稿、卡片、处理记录、缓存、运行产物、个人路径、密钥和本机配置禁止进入。ZIP 与 JSON manifest 是 Release 资产，不加入源码提交。上传前检查 `main`、固定 remote、远程领先/分叉、已有 tag 和 Release 资产；禁止强推或覆盖。
+唯一构建器是 `tools/build_release.py`。公开 ZIP 只含公开框架、公开稳定 Skill、工具、规则、测试、`.github/` 和干净模板；真实源稿、卡片、处理记录、缓存、运行产物、个人路径、密钥和本机配置禁止进入。ZIP 与 JSON manifest 是 Release 资产，不加入源码提交。上传前检查 `main`、HTTPS/SSH 等价 remote、远程领先/分叉、已有 tag 和 Release；禁止强推或覆盖。
 
 ## 飞书
 
@@ -26,11 +26,11 @@ python skills/Future2046-toolbox-publisher/scripts/build_member_package.py --wor
 
 文件名固定为 `Future2046-Skills-v<version>.zip` 和同名 JSON。manifest 记录版本、Skill、工作区、构建时间、文件数、总大小、每个相对路径、大小、SHA-256、包含目录和排除原因；解压后的文件集合必须逐项一致。
 
-飞书页面和替换模式见 `destinations.yaml`。顺序必须是读取页面、构建并校验新包、上传新包、回读名称/大小、单独确认后删除旧包、再次回读。上传失败保留旧包；没有连接器时报告“包已准备、飞书待上传”。
+飞书页面和替换模式见 `destinations.yaml`。`scripts/feishu_api.py` 通过环境变量鉴权，顺序必须是读取页面、定位唯一 ZIP block、构建并校验新包、普通或分片上传、原位替换、回读名称/大小/Token/SHA-256。上传失败保留旧 block；没有环境变量或 API 权限时阻断，不调用旧 AIIP 路径。
 
 ## 授权
 
-检查和准备不改变远程状态。`上传 Future2046-Skills` 授权两条通道；`只上传 GitHub`、`只上传飞书` 限定通道。飞书旧附件删除永远需要删除前的再次确认。
+检查和准备不改变远程状态。`上传 Future2046-Skills` 授权两条通道；`只上传 GitHub`、`只上传飞书` 限定通道。飞书默认原位替换，不执行独立删除旧附件。发布状态写入 `%LOCALAPPDATA%\Future2046-Skills\publisher\`，用于失败回读和幂等重试。
 
 ---
 

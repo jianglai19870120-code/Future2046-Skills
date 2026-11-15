@@ -37,7 +37,7 @@ def copy_clean_workspace(source: Path, destination: Path) -> None:
         destination_dir = destination / target
         destination_dir.mkdir(parents=True, exist_ok=True)
         if not source_dir.is_dir():
-            continue
+            raise FileNotFoundError(f"workspace root missing: {source_dir}")
         # Keep only explanatory and format-template files. Never copy local data.
         for path in source_dir.rglob("*"):
             if not path.is_file() or path.name != "README.md" and not path.name.endswith(".md.template"):
@@ -64,7 +64,7 @@ def main() -> int:
         stage.mkdir()
         for relative in PUBLIC_FILES:
             shutil.copy2(root / relative, stage / relative)
-        for directory in ("docs", "shared", "tools"):
+        for directory in ("docs", "shared", "tools", ".github"):
             shutil.copytree(
                 root / directory,
                 stage / directory,

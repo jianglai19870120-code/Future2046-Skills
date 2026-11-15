@@ -18,7 +18,7 @@ def digest(p:Path)->str:
     return h.hexdigest()
 
 def excluded(p:Path)->str|None:
-    if any(x in EXCLUDED_PARTS for x in p.parts): return "cache/log/runtime/test/archive"
+    if any(x.casefold() in {part.casefold() for part in EXCLUDED_PARTS} for x in p.parts): return "cache/log/runtime/test/archive"
     if p.suffix.lower() in EXCLUDED_SUFFIXES: return "cache/log/runtime"
     if SECRET_NAME.search(p.name) or p.name.startswith("."): return "secret/local configuration"
     try:
@@ -27,8 +27,13 @@ def excluded(p:Path)->str|None:
     return None
 
 def add_file(stage:Path, src:Path, rel:Path, files:list[dict]):
-    if excluded(src): return
+    if excluded(rel): return
     if not src.is_file(): raise FileNotFoundError(f"required file missing: {src}")
+    if SECRET_NAME.search(src.name): return
+    try:
+        if b"-----BEGIN " in src.read_bytes()[:4096]: return
+    except OSError:
+        pass
     dst=stage/rel; dst.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(src,dst)
     files.append({"path":rel.as_posix(),"size":dst.stat().st_size,"sha256":digest(dst)})
 
@@ -55,7 +60,7 @@ def add_workspace(stage:Path, ws:Path, dest:Path, files:list[dict])->dict:
         if not k.endswith("_root") or k in EXCLUDED_ROOT_KEYS or not isinstance(v,str): continue
         p=Path(v)
         if p.is_absolute() or ".." in p.parts: raise ValueError(f"invalid workspace root: {ws/'workspace.yaml'}: {v}")
-        add_tree(stage,ws/p,dest/p,files); included.append({"key":k,"path":(dest/p).as_posix()})
+        add_tree(stage,ws/p,dest/p,files,required=True); included.append({"key":k,"path":(dest/p).as_posix()})
     return {"source":str(ws),"package_path":dest.as_posix(),"included":included}
 
 def version_for(root:Path)->str:
@@ -85,6 +90,8 @@ def write_package(output:Path,stage:Path,version:str,skills:list[str],workspaces
     for p in sorted(stage.rglob("*")):
         if p.is_file(): files.append({"path":p.relative_to(stage).as_posix(),"size":p.stat().st_size,"sha256":digest(p)})
     manifest={"schema_version":2,"package_type":"feishu_member","version":version,"package":output.name,"built_at":datetime.now(timezone.utc).isoformat(),"skills":skills,"workspaces":workspaces,"file_count":len(files),"total_size":sum(x["size"] for x in files),"files":files,"excluded":excluded_items}
+    manifest["archive_size"] = output.stat().st_size
+    manifest["archive_sha256"] = digest(output)
     output.with_suffix(".json").write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
 
 def main()->int:
