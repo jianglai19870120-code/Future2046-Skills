@@ -2,7 +2,7 @@
 
 ## 目的
 
-本目录用于验证 Skill 的触发边界、误区判断、候选合并和卡片格式。评测文件不属于源知识库，不生成正式误区卡，也不写入 `98_处理记录`。
+本目录保存人工评测案例，用于检查 Skill 的触发边界、误区判断、候选合并和卡片格式。评测文件不属于源知识库；本目录不再保留或运行 Python 测试程序。
 
 生产路径回归还必须确认：阶段、审核、提交和恢复过程不会写入 C 盘 Temp、用户目录、仓库根目录或 Skill 包目录；`record-batch` 的清单和提交器输入必须来自当前工作区的 `98_处理记录`。
 
@@ -18,24 +18,25 @@
 
 每次修改 Skill 后至少回归六类文件：`positive-cases.md`、`rejection-cases.md`、`merge-cases.md`、`format-cases.md`、`deduplication-cases.md`、`failure-cases.md`。全局去重还要验证 `duplicate` 不落盘、`related` 不误合并，以及观点查询能返回正确的高度匹配卡片。
 
-硬门禁回归必须使用临时工作区，验证 `pipeline.lock`、`active-run.json`、逐阶段回执、staging 隔离、可恢复提交、前一篇终态依赖、孤立正式卡片检测和 `--require-full-run`。
+硬门禁人工回归使用一次性工作区，并通过 `scripts/workspace_runtime.py` 启动。检查 `pipeline.lock`、`active-run.json`、逐阶段回执、staging 隔离、可恢复提交、前一篇终态依赖、孤立正式卡片检测和 `--require-full-run`。
 
 识别稿校正夹具必须包含完整的 `paragraphReflow` 证据：段落数量、段落编号、角色和边界。缺少该字段的测试数据属于旧版夹具，不能作为 V4 测试样本。
 
-自动化回归还覆盖 Excel 行级物化和源稿队列：
-
-- `test_excel_materialization.py`：非空行生成、完整正文保留、空文案忽略、重复运行幂等和变化行更新；
-- `test_source_queue.py`：稳定队列、已完成源稿过滤、新稿追加和中文数字文件名的自然排序。
+运行前先执行 `workspace_guard.py --workspace <工作区>`，运行后执行 `audit_runtime_paths.py --workspace <工作区>`；Excel 行级物化应人工确认非空行生成、完整正文保留、空文案忽略、重复运行幂等和变化行更新；源稿队列应人工确认稳定排序、已完成源稿过滤与新增稿追加。
 
 ## 通过标准
 
-- 正向案例识别出预期误区，且不把纠偏结论当成误区观点；
+- 正向案例识别出预期误区，且允许有原文依据的纠偏金句作为核心观点；
 - 拒绝案例不生成卡片；
 - 重复候选合并，不同阶段和不同对象的误区保留；
 - 卡片观点不超过24个汉字，原文依据直接支持核心误区；
 - 口播创作不冒充原文事实；
 - 评测过程不写入正式工作区目录。
 - `uncertain` 必须暂停整个批次；索引缺失必须先重建；`superseded` 默认不得出现在普通检索结果中。
+
+## 核心金句观点
+
+观点生成、标题—观点—文件名一致性和纠偏金句边界见 [golden-sentence-cases.md](golden-sentence-cases.md)。
 
 ## 记录格式
 

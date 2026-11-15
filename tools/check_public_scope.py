@@ -2,6 +2,9 @@
 """Fail when a candidate public package contains local data or machine paths."""
 from __future__ import annotations
 
+import sys
+sys.dont_write_bytecode = True
+
 import argparse
 from pathlib import Path
 

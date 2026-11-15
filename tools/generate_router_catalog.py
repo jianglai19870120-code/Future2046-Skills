@@ -2,6 +2,9 @@
 """Generate or verify the router's portable catalog from registered Skills."""
 from __future__ import annotations
 
+import sys
+sys.dont_write_bytecode = True
+
 import argparse
 import hashlib
 import json

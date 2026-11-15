@@ -1,0 +1,13 @@
+schema_version: 1
+github:
+  remote: "https://github.com/jianglai19870120-code/Future2046-Skills.git"
+  branch: "main"
+  tag_format: "v{version}"
+  release_assets:
+    - "dist/Future2046-Skills-{version}.zip"
+    - "dist/Future2046-Skills-{version}.json"
+feishu:
+  wiki_url: "https://zhifuxingqiu.feishu.cn/wiki/RQgAw3bzviiq2JkrVfXcxA83nbi"
+  attachment_name: "Future2046-Skills-v{version}.zip"
+  manifest_name: "Future2046-Skills-v{version}.json"
+  replacement_mode: "upload_verify_then_remove_old"

@@ -2,6 +2,9 @@
 """Ensure the Future2046 tree has no unapproved external Skill references."""
 from __future__ import annotations
 
+import sys
+sys.dont_write_bytecode = True
+
 import argparse
 import zipfile
 from pathlib import Path

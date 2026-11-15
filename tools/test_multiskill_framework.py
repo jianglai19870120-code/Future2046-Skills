@@ -2,11 +2,13 @@
 """Exercise registry, build and Codex sync with a temporary second Skill."""
 from __future__ import annotations
 
+import sys
+sys.dont_write_bytecode = True
+
 import argparse
 import os
 import shutil
 import subprocess
-import sys
 import tempfile
 import zipfile
 from pathlib import Path

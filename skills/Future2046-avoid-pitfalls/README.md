@@ -1,6 +1,6 @@
 # 少走弯路 Skill
 
-当前版本：`1.3.2`
+当前版本：`1.3.22`
 
 生产流程保留完整 V4 阶段证据，但实际执行按六个质量节点组织，减少重复读取、重复启动审核和重复扫描历史卡。详见 [执行效率规则](references/execution-efficiency-rules.md)。
 
@@ -17,6 +17,7 @@
 - 经过五道判断门槛、文内去重和全局去重；
 - 独立生成口语化场景并进行隔离审核；
 - 使用 V4 阶段产物、哈希和可恢复提交，严格逐篇落盘。
+- 在整批完成并通过最终校验后，可在对话中选择生成一个或多个分类避坑指南；每个分类逐个生成、独立审核后保存为 Word。
 
 ## 什么时候用
 
@@ -52,11 +53,15 @@ Skill 源包不包含任何个人源稿、误区卡片或处理记录。详细�
 
 Excel 中每行“作品文案”先形成独立 Markdown；校正识别错误和语义分段后，按稳定源稿队列识别候选、通过五道门槛、文内及全局去重、生成初稿、独立润色、独立审核、正式提交并验证。当前篇取得合法终态后才能开始下一篇。详见 [Excel 规则](references/excel-materialization-rules.md)、[源稿队列规则](references/source-queue-rules.md)、[校正规则](references/transcription-normalization-rules.md)和[产物契约](references/artifact-contracts.md)。
 
+所有正式脚本都必须通过 `scripts/workspace_runtime.py --workspace <工作区> --script <正式脚本> -- <脚本参数>` 运行。启动器先校验 `workspace.yaml`，再把 Python 与临时缓存写入工作区 `98_处理记录/cache/`；不得直接运行内部脚本。
+
 行业资料越多，能够沉淀的避坑卡片越丰富；但每张卡仍必须有原文内部证据，并经过完整 V4 流程、独立审核和全局去重。行业避坑知识库是可调用的内容资产，不等同于外部事实数据库。
 
 ## 输出与调用
 
 正式卡片落在工作区配置的 `card_root`（当前为 `02_误区卡片`），含 `card_id`、分类、标签、源地址、误区观点、口语化场景和原文依据；格式见[卡片模板](references/misconception-card-template.md)。按观点检索时只读取已有卡片，遵守[检索规则](references/card-retrieval-rules.md)。索引和阶段记录在 `workspace.yaml` 配置的 `record_root`（当前为 `98_处理记录`），不得创建替代目录。
+
+分类避坑指南按用户选择逐个生成。生成规则见[分类避坑指南生成规则](references/category-guide-generation-rules.md)；正式程序为 `scripts/review_category_boundary.py`、`scripts/generate_category_guide.py`、`scripts/render_category_guide.py`、`scripts/review_category_guide.py` 和 `scripts/promote_category_guide.py`。系统先由大模型定义当前分类的篇章与小标签边界，再按边界分配正式卡片。指南草稿、边界方案、渲染页和审核记录写入 `record_root/guides/`，结构与视觉审核通过后保存到工作区 `guide_root` 指定的 `03_避坑指南`。
 
 ## 常见暂停原因
 

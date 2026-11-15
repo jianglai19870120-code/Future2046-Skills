@@ -2,7 +2,7 @@
 
 一组可独立安装、也可以通过统一入口调用的中文 Agent Skills。
 
-**当前版本：** `1.3.2`　|　[许可证](LICENSE)
+**当前版本：** `1.3.27`　|　[许可证](LICENSE)
 
 ## Future2046 是什么
 
@@ -15,6 +15,8 @@ Future2046 Skills 是由博主姜来已来2046开发的，个人IP×商业创业
 
 - 通过统一入口选择已安装且有效的 Skill；
 - 围绕具体行业，读取文章、书籍、访谈、视频文稿或 Excel 行文稿，持续提炼行业常见的坑、错误认知和需要避开的做法，帮助你提前避坑、少走弯路，并形成可调用的误区卡；
+- 从对标账号作品标题中提炼并审核八大爆款元素词根，形成可复用的选题洞察；
+- 检查版本、Bug 和发布范围，准备 GitHub 公开包与飞书会员资料包；
 - 将来继续增加新的、单一职责的 Skill；
 - 单独安装某个 Skill，或安装整个 Future2046 集合。
 
@@ -101,12 +103,14 @@ $future2046 我有一篇视频文稿，想找出其中的错误认知
 | 命令 | 用途 |
 |---|---|
 | `$future2046-avoid-pitfalls` | 从行业资料中识别常见坑和错误认知，生成可检索、可复用的误区卡 |
+| `$future2046-viral-root` | 从对标账号作品标题中提炼并审核八大爆款元素词根 |
 
 ### Skill 工具
 
 | 命令 | 用途 |
 |---|---|
 | `$future2046-skill-maker` | 创建、改进、测试、同步和发布 Future2046 Skill |
+| `$future2046-toolbox-publisher` | 检查版本和发布门禁，准备 GitHub 公开包与飞书会员资料包 |
 
 已经知道要使用某个 Skill 时，可以直接调用它。每个 Skill 的详细输入、输出和边界见对应包内的 README 与 `SKILL.md`。
 
@@ -225,7 +229,7 @@ Skill 包       = 可分享的能力
 通用规则：
 
 - `skills/` 保存可公开的 Skill 源包；
-- `workspaces/少走弯路工作区/` 是本机唯一工作区来源；发布时从中提取干净框架，不上传其中的个人资料；
+- `workspaces/` 保存各 Skill 的本机工作区来源；发布时只提取干净框架，不上传其中的个人资料；
 - 真实文稿、Excel、卡片、日志和审核证据不进入 Skill 包；
 - Skill 不依赖固定 E 盘或用户名路径；
 - 将整个仓库复制到其他位置后，应通过工作区配置重新定位数据目录。
@@ -267,9 +271,10 @@ python -B tools\test_release_install.py --root E:\Future2046-Skills
 |---|---|
 | [`skills/`](skills/) | Skill 源包 |
 | [`workspaces/少走弯路工作区/`](workspaces/少走弯路工作区/) | 本机工作区来源；发布时提取为同路径的干净框架 |
+| [`workspaces/爆款词根工作区/`](workspaces/爆款词根工作区/) | 爆款词根 Skill 的本机工作区来源；发布时提取为同路径的干净框架 |
 | [`shared/skill-registry.yaml`](shared/skill-registry.yaml) | 所有正式 Skill 的登记真源 |
 | [`docs/新手入门.md`](docs/新手入门.md) | 面向第一次使用者的项目入门说明 |
-| [`tools/`](tools/) | 校验、目录生成、打包和 Codex 安装工具 |
+| [`tools/`](tools/) | 全系统的注册、校验、发布、安装与系统测试工具；目录边界见 [tools/README.md](tools/README.md) |
 | `dist/` | 由构建工具生成的发布包 |
 | [`DATA-POLICY.md`](DATA-POLICY.md) | 数据公开和私有边界 |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | 新增、修改和维护 Skill 的规则 |
@@ -298,3 +303,11 @@ python -B tools\test_release_install.py --root E:\Future2046-Skills
 唯一产品：本人24h会员答疑群（找懂的人问就是捷径）
 
 许可证是项目授权范围的唯一准则。未经授权，不得将本项目或其中的 Skill 重新打包、再分发、出售或用于训练人工智能模型。
+
+---
+
+抖音 / 视频号 / 小红书同名：姜来已来2046
+本人微信：jianglai8883
+唯一产品：本人24h会员答疑群（找懂的人问就是捷径）
+
+---

@@ -2,12 +2,17 @@
 """Recoverable, locked single-source commit. Never labels partial writes completed."""
 from __future__ import annotations
 
+import os
+import sys
+if os.environ.get("FUTURE2046_PYCACHE_PREFIX"):
+    sys.pycache_prefix = os.environ["FUTURE2046_PYCACHE_PREFIX"]
+else:
+    sys.dont_write_bytecode = True
+
 import argparse
 import json
-import os
 import re
 import shutil
-import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -20,6 +25,7 @@ PRE = [
     "global_deduplication_final",
 ]
 POST = ["formal_card_write", "index_update", "processing_log_write", "completion_validation"]
+BRAND_FOOTER = "---\n\n抖音 / 视频号 / 小红书同名：姜来已来2046\n本人微信：jianglai8883\n唯一产品：本人24h会员答疑群（找懂的人问就是捷径）\n\n---"
 
 
 def stamp() -> str:
@@ -48,7 +54,7 @@ def receipt(stage: str, evidence: dict, previous: str) -> dict:
             "completedAt": completed.isoformat(timespec="microseconds"), "evidence": evidence}
 
 
-def card_fields(path: Path) -> tuple[dict, str]:
+def card_fields(path: Path) -> tuple[dict, str, str]:
     body = path.read_text(encoding="utf-8")
     if not body.startswith("---\n") or "\n---\n" not in body[4:]:
         raise ValueError(f"missing YAML frontmatter: {path}")
@@ -65,7 +71,9 @@ def card_fields(path: Path) -> tuple[dict, str]:
     m = re.search(r"(?m)^# (.+)$", rest)
     if not m or any("## " + x not in rest for x in ("误区观点", "误区场景", "原文依据")):
         raise ValueError(f"card sections incomplete: {path}")
-    return fields, m.group(1).strip()
+    viewpoint_block = rest.split("## 误区观点\n", 1)[1].split("## 误区场景\n", 1)[0]
+    viewpoint = " ".join(line.strip() for line in viewpoint_block.splitlines() if line.strip())
+    return fields, m.group(1).strip(), viewpoint
 
 
 def validate_pre(root: Path, run: dict, rows: list[dict]) -> tuple[list[tuple[Path, Path]], list[dict]]:
@@ -96,7 +104,9 @@ def validate_pre(root: Path, run: dict, rows: list[dict]) -> tuple[list[tuple[Pa
     review = read_json(run_file(root, run["runId"], receipts[8]["evidence"]["artifactPath"]))
     polish = read_json(run_file(root, run["runId"], receipts[7]["evidence"]["artifactPath"]))
     final_dedup = read_json(run_file(root, run["runId"], receipts[9]["evidence"]["artifactPath"]))
-    if final_dedup["indexSha256"] != digest(records / "card-index.jsonl"):
+    current_index_sha = digest(records / "card-index.jsonl")
+    source_index_sha = final_dedup.get("indexSourceSha256", final_dedup.get("indexSha256"))
+    if source_index_sha != current_index_sha:
         raise ValueError("index changed after final deduplication; redo final dedup")
     reviewed = {c.get("cardId"): c for c in review["cards"]}
     if set(reviewed) != {c.get("cardId") for c in polish["cards"]}:
@@ -118,16 +128,23 @@ def validate_pre(root: Path, run: dict, rows: list[dict]) -> tuple[list[tuple[Pa
         staged = staging / target.name
         if digest(staged) != reviewed[row["cardId"]]["reviewedCardSha256"]:
             raise ValueError("staging changed after independent review")
-        fields, title = card_fields(staged)
+        fields, title, viewpoint = card_fields(staged)
+        if run.get("viewpointContract") in {"golden-sentence-v2", "golden-sentence-v3"} and (title != viewpoint or row.get("title") != viewpoint or row.get("viewpoint") != viewpoint):
+            raise ValueError(f"title/viewpoint mismatch: {rel}")
+        if run.get("viewpointContract") in {"golden-sentence-v2", "golden-sentence-v3", "golden-sentence-migration-v1"}:
+            body = staged.read_text(encoding="utf-8").replace("\r\n", "\n")
+            normalized = body.rstrip("\n")
+            if not normalized.endswith(BRAND_FOOTER) or normalized.count(BRAND_FOOTER) != 1:
+                raise ValueError(f"formal card brand footer missing or duplicated: {rel}")
         if (fields.get("card_id"), fields.get("category"), fields.get("tags"), fields.get("source_address")) != (
             row.get("cardId"), row.get("category"), row.get("tags"), row.get("sourceAddress")):
             raise ValueError(f"card metadata disagrees with index: {rel}; fields={fields!r}; row={row!r}")
-        if row.get("category") not in ("", "个人IP", "创业搞钱", "成长逆袭") or not 1 <= len(row.get("tags", [])) <= 3:
+        if row.get("category") not in ("", "新媒体", "创业搞钱", "成长逆袭") or not 1 <= len(row.get("tags", [])) <= 3:
             raise ValueError(f"card category/tags invalid: {rel}")
         normalization = read_json(run_file(root, run["runId"], receipts[1]["evidence"]["artifactPath"]))
         normalized_source = normalization.get("normalizedSourcePath", run["sourcePath"])
         source = Path(normalized_source).stem
-        if fields["source_address"] != normalized_source or target.name != f"{source}_{title}.md" or row.get("title") != title:
+        if fields["source_address"] not in {run["sourcePath"], normalized_source} or target.name != f"{source}_{title}.md" or row.get("title") != title or row.get("viewpoint") != title:
             raise ValueError(f"source/title/filename mismatch: {rel}")
         if target.exists() and (row["cardId"] not in old_by_id or old_by_id[row["cardId"]].get("cardPath") != rel):
             raise ValueError(f"target exists under another card identity: {rel}")

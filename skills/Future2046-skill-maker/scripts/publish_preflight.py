@@ -2,6 +2,9 @@
 """Read-only preflight for a local GitHub publication."""
 from __future__ import annotations
 
+import sys
+sys.dont_write_bytecode = True
+
 import argparse
 import subprocess
 from pathlib import Path

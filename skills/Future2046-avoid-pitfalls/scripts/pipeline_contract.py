@@ -1,11 +1,17 @@
 """Shared checks for source-bound, content-bearing stage artifacts."""
 from __future__ import annotations
 
+import os
+import sys
+if os.environ.get("FUTURE2046_PYCACHE_PREFIX"):
+    sys.pycache_prefix = os.environ["FUTURE2046_PYCACHE_PREFIX"]
+else:
+    sys.dont_write_bytecode = True
+
 import hashlib
 import json
 import difflib
 import re
-import sys
 from pathlib import Path
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -48,6 +54,10 @@ def workspace_layout(root: Path) -> dict[str, str]:
     required before any command is allowed to create runtime state.
     """
     root = root.resolve()
+    repository_root = Path(__file__).resolve().parents[3]
+    misplaced_root = (repository_root / "工作区").resolve()
+    if root == misplaced_root or root.is_relative_to(misplaced_root):
+        raise ValueError("禁止把仓库根目录下的 工作区 作为正式工作区")
     config = root / "workspace.yaml"
     if not config.is_file():
         raise ValueError(f"未找到有效工作区：{root}；请提供包含 workspace.yaml 的工作区根目录")
@@ -72,6 +82,8 @@ def workspace_layout(root: Path) -> dict[str, str]:
     missing = [key for key in REQUIRED_WORKSPACE_KEYS if key not in values or not values[key]]
     if missing:
         raise ValueError(f"workspace.yaml 缺少必需字段：{', '.join(missing)}")
+    if values["technical_skill_name"] != "Future2046-avoid-pitfalls":
+        raise ValueError("workspace.yaml 的 technical_skill_name 不属于少走弯路 Skill")
     for key, value in layout.items():
         if key == "record_root" and value.replace("\\", "/").strip("/") in {"98", "处理记录", "98/处理记录"}:
             raise ValueError("workspace.yaml 的 record_root 必须指向正式记录目录 98_处理记录，不能使用 98 或 处理记录")
@@ -270,12 +282,32 @@ def check_stage(root: Path, run: dict, stage: str, artifact: Path, previous_hash
             evidence = candidate.get("sourceEvidenceMeta") or candidate.get("sourceEvidenceDetails")
             if not isinstance(quality, dict):
                 raise ValueError("candidate viewpointQuality missing")
-            required_quality = ("isMistakenBelief", "hasErrorObject", "hasErrorJudgment", "hasCausalDirection", "semanticComplete", "sourceClose", "tooCompressed", "isCorrectionConclusion", "sentenceCount", "commaCount", "characterCount")
+            if run.get("viewpointContract") in {"golden-sentence-v2", "golden-sentence-v3"}:
+                required_quality = ("isSourceGrounded", "isCoreJudgment", "isDecisive", "isSingleIssue", "isSemanticallyAlignedWithScene", "isTitleViewpointExact", "hasCausalOrContrastDirection", "sourceClose", "tooCompressed", "unsupportedExpansion", "sentenceCount", "commaCount", "characterCount")
+                if run.get("viewpointContract") == "golden-sentence-v3":
+                    required_quality += ("coversPrimaryObject", "coversWrongBehavior", "coversKeyCondition", "coversProblemResult", "preservesSceneTarget", "isNotMechanismOnly", "isNotFragmentSummary", "semanticDrift")
+            else:
+                required_quality = ("isMistakenBelief", "hasErrorObject", "hasErrorJudgment", "hasCausalDirection", "semanticComplete", "sourceClose", "tooCompressed", "isCorrectionConclusion", "sentenceCount", "commaCount", "characterCount")
             if any(key not in quality for key in required_quality):
                 raise ValueError("candidate viewpointQuality incomplete")
-            if not all(quality[key] is True for key in ("isMistakenBelief", "hasErrorObject", "hasErrorJudgment", "hasCausalDirection", "semanticComplete", "sourceClose")) or quality["tooCompressed"] is not False or quality["isCorrectionConclusion"] is not False or quality["sentenceCount"] != 1 or quality["characterCount"] > 24:
+            if run.get("viewpointContract") in {"golden-sentence-v2", "golden-sentence-v3"}:
+                required_true = ("isSourceGrounded", "isCoreJudgment", "isDecisive", "isSingleIssue", "isSemanticallyAlignedWithScene", "isTitleViewpointExact", "hasCausalOrContrastDirection", "sourceClose")
+                if not all(quality[key] is True for key in required_true) or quality["tooCompressed"] is not False or quality["unsupportedExpansion"] is not False or quality["sentenceCount"] != 1 or quality["characterCount"] > 24:
+                    raise ValueError("golden-sentence viewpointQuality failed")
+                if run.get("viewpointContract") == "golden-sentence-v3":
+                    v3_true = ("coversPrimaryObject", "preservesSceneTarget", "isNotMechanismOnly", "isNotFragmentSummary")
+                    if not all(quality[key] is True for key in v3_true) or quality["semanticDrift"] is not False:
+                        raise ValueError("golden-sentence-v3 semantic coverage failed")
+                    semantic_map = candidate.get("sceneSemanticMap")
+                    if not isinstance(semantic_map, dict) or any(key not in semantic_map for key in ("primaryObject", "wrongBehavior", "keyCondition", "problemResult", "correctionDirection")) or not semantic_map.get("primaryObject") or not semantic_map.get("wrongBehavior") or not semantic_map.get("problemResult") or not candidate.get("viewpointSelectionReason"):
+                        raise ValueError("golden-sentence-v3 scene semantic map missing")
+                if not candidate.get("canonicalViewpoint") or candidate.get("canonicalViewpoint") != candidate.get("title") or candidate.get("canonicalViewpoint") != candidate.get("viewpoint"):
+                    raise ValueError("canonical viewpoint/title mismatch")
+                if candidate.get("viewpointMode") not in {"error_restatement", "causal_correction", "priority_reversal", "variable_shift", "boundary_judgment", "result_reversal"} or not candidate.get("viewpointSelectionReason"):
+                    raise ValueError("golden-sentence viewpoint mode missing")
+            elif not all(quality[key] is True for key in ("isMistakenBelief", "hasErrorObject", "hasErrorJudgment", "hasCausalDirection", "semanticComplete", "sourceClose")) or quality["tooCompressed"] is not False or quality["isCorrectionConclusion"] is not False or quality["sentenceCount"] != 1 or quality["characterCount"] > 24:
                 raise ValueError("candidate viewpointQuality failed")
-            if run.get("viewpointPatternRequired"):
+            if run.get("viewpointPatternRequired") and run.get("viewpointContract") != "golden-sentence-v2":
                 allowed_patterns = {"把A当成B", "以为A就能B", "只要A就会B", "A本身就等于B", "做了A就不需要B", "把短期结果当长期方法", "否定性错误判断", "条件错配判断", "因果倒置判断", "主体归因错误"}
                 if candidate.get("viewpointPattern") not in allowed_patterns or not candidate.get("patternSelectionReason"):
                     raise ValueError("viewpoint pattern selection is missing")

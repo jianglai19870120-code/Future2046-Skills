@@ -15,9 +15,9 @@ function Get-Sha256([string]$Path) {
 }
 $repoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $registryPath = Join-Path $repoRoot 'shared\skill-registry.yaml'
-$registryJson = python (Join-Path $repoRoot 'tools\read_registry.py') $repoRoot
+$registryJson = python -B (Join-Path $repoRoot 'tools\read_registry.py') $repoRoot
 if ($LASTEXITCODE -ne 0) { throw 'Unable to read Skill registry; install root requirements.txt first.' }
-$catalogCheck = python (Join-Path $repoRoot 'tools\generate_router_catalog.py') --root $repoRoot --check
+$catalogCheck = python -B (Join-Path $repoRoot 'tools\generate_router_catalog.py') --root $repoRoot --check
 if ($LASTEXITCODE -ne 0) { throw 'Router catalog is stale. Run python tools/generate_router_catalog.py --write.' }
 $entries = @()
 foreach ($item in (ConvertFrom-Json -InputObject $registryJson)) { $entries += $item }
@@ -69,6 +69,6 @@ foreach ($entry in $entries) {
     Copy-Item -LiteralPath $sourceFiles[$key] -Destination $dest -Force
   }
   foreach ($key in $stale) { Remove-Item -LiteralPath $targetFiles[$key] -Force }
-  python (Join-Path $repoRoot 'tools\verify_codex_install.py') --source $source --target $target
+  python -B (Join-Path $repoRoot 'tools\verify_codex_install.py') --source $source --target $target
   if ($LASTEXITCODE -ne 0) { throw "Codex install verification failed: $($entry.id)" }
 }

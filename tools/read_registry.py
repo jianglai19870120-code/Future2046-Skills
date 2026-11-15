@@ -2,6 +2,8 @@
 """Print registry Skill entries as JSON for PowerShell installation."""
 import json
 import sys
+sys.dont_write_bytecode = True
+
 from pathlib import Path
 
 import yaml

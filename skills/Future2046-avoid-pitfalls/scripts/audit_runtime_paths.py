@@ -2,20 +2,28 @@
 """Find known production artifacts outside the configured workspace."""
 from __future__ import annotations
 
+import os
+import sys
+if os.environ.get("FUTURE2046_PYCACHE_PREFIX"):
+    sys.pycache_prefix = os.environ["FUTURE2046_PYCACHE_PREFIX"]
+else:
+    sys.dont_write_bytecode = True
+
 import argparse
 import hashlib
 import json
-import sys
 from pathlib import Path
 
 from pipeline_contract import workspace_path
+from workspace_guard import verify
 
 PATTERNS = ("create_review*.py", "prepare_commit*.py", "commit*.py", "repair*.py",
             "write_review*.py", "check_*.py", "Future2046-*.py", "MISC-V4-*.json")
 OFFICIAL = {"audit_runtime_paths.py", "audit_workspace.py", "commit_run.py",
             "materialize_excel_sources.py", "pipeline_contract.py", "prepare_submission.py",
             "record_review.py", "recover_run.py", "source_queue.py", "stage_receipt.py",
-            "validate_pipeline.py"}
+            "validate_pipeline.py", "workspace_guard.py", "workspace_runtime.py",
+            "card_migration_format.py", "migrate_card_viewpoint_single.py"}
 
 
 def sha(path: Path) -> str:
@@ -51,6 +59,26 @@ def is_misconception_artifact(path: Path) -> bool:
     return any(marker in text for marker in markers)
 
 
+def unexpected_workspace_directories(repo_root: Path) -> list[dict]:
+    """Report the historically mistaken root even when it only contains folders."""
+    wrong = repo_root / "工作区"
+    if not wrong.exists():
+        return []
+    if wrong.is_symlink():
+        kind = "unexpected_workspace_symlink"
+    else:
+        kind = "unexpected_workspace_directory"
+    descendants = list(wrong.rglob("*"))
+    files = [path for path in descendants if path.is_file()]
+    return [{
+        "path": wrong.as_posix(),
+        "type": kind,
+        "fileCount": len(files),
+        "directoryCount": sum(path.is_dir() for path in descendants) + 1,
+        "action": "inspect_and_remove_after_confirmation",
+    }]
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--workspace", required=True)
@@ -59,6 +87,7 @@ def main() -> int:
     args = ap.parse_args()
     try:
         root = Path(args.workspace).resolve()
+        guard = verify(root)
         records = workspace_path(root, "record_root")
         user_root = Path.home()
         temp_root = Path.home() / "AppData/Local/Temp"
@@ -75,16 +104,18 @@ def main() -> int:
                       if not p.is_relative_to(records)
                       and not (p.parent.name == "scripts" and p.name in OFFICIAL)
                       and is_misconception_artifact(p)]
+        wrong_directories = unexpected_workspace_directories(Path(guard["repositoryRoot"]))
         report = {"workspace": str(root), "recordRoot": str(records),
-                  "workspaceRuntimeClean": not candidates,
+                  "workspaceRuntimeClean": not candidates and not wrong_directories,
                   "externalArtifacts":[{"path":p.as_posix(),"type":kind,"size":p.stat().st_size,
                                         "sha256":sha(p),"action":"delete_after_confirmation"}
-                                       for p,kind in candidates]}
+                                       for p,kind in candidates],
+                  "unexpectedDirectories": wrong_directories}
         if args.write:
             out = records / "runtime-path-audit.json"
             out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print(json.dumps(report, ensure_ascii=False, indent=2))
-        return 0 if (not candidates or args.allow_findings) else 1
+        return 0 if (not candidates and not wrong_directories or args.allow_findings) else 1
     except Exception as exc:
         print(f"FAIL: {exc}", file=sys.stderr)
         return 1

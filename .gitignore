@@ -1,5 +1,6 @@
 # Future2046 public repository boundary
 /workspaces/*
+/工作区/
 !/workspaces/.gitkeep
 !/workspaces/README.md
 /dist/

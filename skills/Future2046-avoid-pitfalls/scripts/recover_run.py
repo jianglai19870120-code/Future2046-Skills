@@ -2,10 +2,15 @@
 """Inspect, roll back an interrupted commit, or resolve the current source."""
 from __future__ import annotations
 
-import argparse
-import json
 import os
 import sys
+if os.environ.get("FUTURE2046_PYCACHE_PREFIX"):
+    sys.pycache_prefix = os.environ["FUTURE2046_PYCACHE_PREFIX"]
+else:
+    sys.dont_write_bytecode = True
+
+import argparse
+import json
 from datetime import datetime
 from pathlib import Path
 

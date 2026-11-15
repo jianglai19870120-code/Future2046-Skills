@@ -58,6 +58,7 @@ metadata:
 - [制作与改进流程](references/skill-workflow.md)
 - [发布与 GitHub 流程](references/publishing.md)
 - [验证与回退规则](references/validation-and-rollback.md)
+- [程序放置规则](references/program-placement-rules.md)
 
 ## 品牌尾注
 

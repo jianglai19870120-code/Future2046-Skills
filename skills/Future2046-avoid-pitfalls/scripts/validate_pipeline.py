@@ -2,11 +2,18 @@
 """Validate 少走弯路 hard-gate receipts and current card/index state."""
 from __future__ import annotations
 
+import os
+import sys
+import os
+if os.environ.get("FUTURE2046_PYCACHE_PREFIX"):
+    sys.pycache_prefix = os.environ["FUTURE2046_PYCACHE_PREFIX"]
+else:
+    sys.dont_write_bytecode = True
+
 import argparse
 import hashlib
 import json
 import re
-import sys
 from pathlib import Path
 from pipeline_contract import check_stage, digest, run_file, workspace_path
 
@@ -28,7 +35,7 @@ STAGES = [
     "completion_validation",
 ]
 ALLOWED_TERMINAL = {"completed", "skipped", "failed", "paused"}
-ALLOWED_CATEGORIES = {"", "个人IP", "创业搞钱", "成长逆袭"}
+ALLOWED_CATEGORIES = {"", "新媒体", "创业搞钱", "成长逆袭"}
 
 
 def fail(message: str, errors: list[str]) -> None:

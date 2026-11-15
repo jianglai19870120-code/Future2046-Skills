@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """Check release and package versions for every registered Skill."""
+import sys
+sys.dont_write_bytecode = True
+
 import argparse
 import re
 from pathlib import Path

@@ -2,6 +2,9 @@
 """Validate the minimum structure of a Future2046 Skill package."""
 from __future__ import annotations
 
+import sys
+sys.dont_write_bytecode = True
+
 import argparse
 from pathlib import Path
 
@@ -25,6 +28,29 @@ def main() -> int:
         return 1
     if not skill.startswith("---") or "name:" not in skill.split("---", 2)[1]:
         print("FAIL: invalid SKILL.md frontmatter")
+        return 1
+    executable_suffixes = {".py", ".ps1"}
+    errors = []
+    scripts = package / "scripts"
+    if scripts.is_dir():
+        for path in scripts.rglob("*"):
+            if path.is_file() and path.suffix.lower() in executable_suffixes and (
+                path.name.startswith("test_") or path.name.endswith("_test.py")
+            ):
+                errors.append(f"runtime scripts must not contain tests: {path.relative_to(package)}")
+    evals = package / "evals"
+    if evals.is_dir():
+        for path in evals.rglob("*"):
+            if path.is_file() and path.suffix.lower() in executable_suffixes and not path.name.startswith("test_"):
+                errors.append(f"eval programs must use test_ prefix: {path.relative_to(package)}")
+    for folder in ("references", "agents"):
+        location = package / folder
+        if location.is_dir():
+            for path in location.rglob("*"):
+                if path.is_file() and path.suffix.lower() in executable_suffixes:
+                    errors.append(f"executable belongs in scripts or evals: {path.relative_to(package)}")
+    if errors:
+        print("FAIL: " + "; ".join(errors))
         return 1
     print("PASS: Skill project structure")
     return 0

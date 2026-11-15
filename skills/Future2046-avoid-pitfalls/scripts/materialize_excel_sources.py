@@ -2,11 +2,17 @@
 """Materialize one Markdown source document per non-empty Excel copy row."""
 from __future__ import annotations
 
+import os
+import sys
+if os.environ.get("FUTURE2046_PYCACHE_PREFIX"):
+    sys.pycache_prefix = os.environ["FUTURE2046_PYCACHE_PREFIX"]
+else:
+    sys.dont_write_bytecode = True
+
 import argparse
 import hashlib
 import json
 import re
-import sys
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Iterable

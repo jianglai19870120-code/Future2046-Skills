@@ -31,6 +31,7 @@
 4. 在 `shared/skill-registry.yaml` 登记版本、状态、安装目标和实际测试入口；运行 `python tools/generate_router_catalog.py --write` 更新入口目录快照。在根 README 与 `docs/新手入门.md` 增加对应目录项和包内链接。该注册表是唯一登记真源，不另建第二份 Skill 清单。
 5. 更新 `VERSION`、`CHANGELOG.md` 及各包版本，验证、构建并同步安装。已有 Skill 修改了 frontmatter 或正文时，也必须重新生成目录快照。
 6. 创建或修改 Skill 时使用 `$future2046-skill-maker` 的方案、确认、验证和回退规则；发布前运行 Future2046 纯净性检查，不得把未授权外部标识、用户资料或本机配置写入仓库或发布包。
+7. 程序按[系统工具目录说明](tools/README.md)和 Skill 制作器的[程序放置规则](skills/Future2046-skill-maker/references/program-placement-rules.md)归类：业务运行程序进入所属 Skill 的 `scripts/`，全系统维护程序进入根 `tools/`。新增程序后必须运行 `python tools/check_program_boundaries.py --root .`。
 
 ## 校验、安装与下线
 
@@ -45,3 +46,11 @@ powershell -ExecutionPolicy Bypass -File tools/sync_codex_install.ps1
 ```
 
 Codex 安装后用 `tools/verify_codex_install.py` 对比源包与安装包。下线 Skill 先调整注册状态与目录快照，再处理确认归属的安装副本；不得顺带删除个人工作区。`shared/` 只保留注册表；只有多个 Skill 真实共用同一运行契约时，才新增共享真源并配套同步校验。Git 提交和远端发布按单独授权执行。
+
+---
+
+抖音 / 视频号 / 小红书同名：姜来已来2046
+本人微信：jianglai8883
+唯一产品：本人24h会员答疑群（找懂的人问就是捷径）
+
+---

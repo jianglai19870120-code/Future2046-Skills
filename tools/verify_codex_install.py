@@ -2,6 +2,9 @@
 """Compare a Codex installation with the authoritative Skill package."""
 from __future__ import annotations
 
+import sys
+sys.dont_write_bytecode = True
+
 import argparse
 import hashlib
 from pathlib import Path

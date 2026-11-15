@@ -2,13 +2,17 @@
 """Build a public zip containing Skill packages and clean workspace frameworks."""
 from __future__ import annotations
 
+import sys
+sys.dont_write_bytecode = True
+
 import argparse
 import json
 import shutil
 import subprocess
-import sys
 import tempfile
 import zipfile
+import hashlib
+from datetime import datetime, timezone
 from pathlib import Path
 from check_skill_registry import registry
 import yaml
@@ -67,7 +71,7 @@ def main() -> int:
                 ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo"),
             )
         release_registry = registry(root)
-        release_registry['skills'] = [entry for entry in release_registry['skills'] if entry.get('distribution') == 'public']
+        release_registry['skills'] = [entry for entry in release_registry['skills'] if entry.get('distribution') == 'public' and entry.get('status') == 'stable']
         (stage / 'shared' / 'skill-registry.yaml').write_text(
             yaml.safe_dump(release_registry, allow_unicode=True, sort_keys=False), encoding='utf-8')
         for entry in release_registry['skills']:
@@ -87,7 +91,22 @@ def main() -> int:
                     archive.write(path, path.relative_to(stage).as_posix())
                 elif path.is_dir() and not any(path.iterdir()):
                     archive.writestr(path.relative_to(stage).as_posix().rstrip("/") + "/", "")
-        manifest = {"version": version, "package": output.name, "files": len([p for p in stage.rglob("*") if p.is_file()])}
+        files = []
+        for path in sorted(stage.rglob("*")):
+            if path.is_file():
+                digest = hashlib.sha256(path.read_bytes()).hexdigest()
+                files.append({"path": path.relative_to(stage).as_posix(), "size": path.stat().st_size, "sha256": digest})
+        manifest = {
+            "schema_version": 2,
+            "package_type": "github_public",
+            "version": version,
+            "package": output.name,
+            "built_at": datetime.now(timezone.utc).isoformat(),
+            "skills": [entry["id"] for entry in release_registry["skills"]],
+            "file_count": len(files),
+            "total_size": sum(item["size"] for item in files),
+            "files": files,
+        }
         (output.with_suffix(".json")).write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"PASS: built {output}")
     return 0

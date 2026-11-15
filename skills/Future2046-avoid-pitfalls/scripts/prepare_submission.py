@@ -2,9 +2,15 @@
 """Validate that submission inputs are inside the current run's E: workspace."""
 from __future__ import annotations
 
+import os
+import sys
+if os.environ.get("FUTURE2046_PYCACHE_PREFIX"):
+    sys.pycache_prefix = os.environ["FUTURE2046_PYCACHE_PREFIX"]
+else:
+    sys.dont_write_bytecode = True
+
 import argparse
 import json
-import sys
 from pathlib import Path
 
 from pipeline_contract import digest, record_path, read_json, workspace_path

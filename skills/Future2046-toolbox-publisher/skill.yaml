@@ -1,0 +1,14 @@
+schema_version: 1
+id: "future2046-toolbox-publisher"
+package_directory: "Future2046-toolbox-publisher"
+display_name: "工具箱发布"
+version: "1.3.27"
+entrypoint: "SKILL.md"
+workspace_template: ""
+supported_agents:
+  - "codex"
+runtime:
+  python: ">=3.11,<3.14"
+distribution: "public"
+tests:
+  - "evals/test_member_package.py"

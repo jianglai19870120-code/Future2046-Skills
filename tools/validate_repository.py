@@ -2,12 +2,14 @@
 """Run the repository-level structural and behavior checks."""
 from __future__ import annotations
 
+import sys
+sys.dont_write_bytecode = True
+
 import argparse
 import ast
 import os
 import re
 import subprocess
-import sys
 from pathlib import Path
 from check_skill_registry import registry
 
@@ -36,6 +38,8 @@ def check_links(root: Path) -> list[str]:
         for file in files:
             if "__pycache__" in file.parts:
                 continue
+            if base == root / "workspaces" and file.name != "README.md" and not file.name.endswith(".md.template"):
+                continue
             content = file.read_text(encoding="utf-8")
             for target in re.findall(r"(?<!!)\[[^\]]+\]\(([^)]+)\)", content):
                 path = target.split("#", 1)[0].strip()
@@ -47,11 +51,21 @@ def check_links(root: Path) -> list[str]:
 
 
 def check_workspace_source(root: Path) -> list[str]:
-    """Validate that the registered workspace source has its public guide."""
-    local = root / "workspaces" / "少走弯路工作区"
-    if not (local / "README.md").is_file() or not (local / "workspace.yaml").is_file():
-        return ["workspace source requires README.md and workspace.yaml"]
-    return []
+    """Validate public guides for every registered workspace template."""
+    errors = []
+    for entry in registry(root)["skills"]:
+        template = entry.get("workspace_template")
+        if not template:
+            continue
+        local = root / template
+        if not (local / "README.md").is_file() or not (local / "workspace.yaml").is_file():
+            errors.append(f"workspace source requires README.md and workspace.yaml: {template}")
+    return errors
+
+
+def check_misplaced_workspace(root: Path) -> list[str]:
+    wrong = root / "工作区"
+    return [f"misplaced runtime workspace exists: {wrong}"] if wrong.exists() else []
 
 
 def main() -> int:
@@ -82,6 +96,8 @@ def main() -> int:
             errors.append(f"syntax error in {script}: {exc}")
     errors += check_links(root)
     errors += check_workspace_source(root)
+    errors += check_misplaced_workspace(root)
+    errors += run([sys.executable, str(root / "tools" / "check_program_boundaries.py"), "--root", str(root)], root)
     errors += run([sys.executable, str(root / "tools" / "check_skill_registry.py"), "--root", str(root)], root)
     errors += run([sys.executable, str(root / "tools" / "generate_router_catalog.py"), "--root", str(root), "--check"], root)
     errors += run([sys.executable, str(root / "tools" / "check_version_consistency.py"), "--root", str(root)], root)

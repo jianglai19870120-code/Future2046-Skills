@@ -2,13 +2,20 @@
 """Audit historical cards and source coverage without changing formal assets."""
 from __future__ import annotations
 
+import os
+import sys
+if os.environ.get("FUTURE2046_PYCACHE_PREFIX"):
+    sys.pycache_prefix = os.environ["FUTURE2046_PYCACHE_PREFIX"]
+else:
+    sys.dont_write_bytecode = True
+
 import argparse
 import json
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
-from pipeline_contract import workspace_path
+from pipeline_contract import record_path, workspace_path
 
 SOURCE_SUFFIXES = {".md", ".txt", ".docx", ".pdf"}
 
@@ -128,7 +135,11 @@ def main() -> int:
         "statusCounts": dict(Counter(row["status"] for row in entries)),
         "entries": entries,
     }
-    output = Path(args.output).resolve() if args.output else records / "historical-audit.json"
+    try:
+        output = record_path(root, args.output) if args.output else records / "historical-audit.json"
+    except ValueError as exc:
+        print(f"FAIL: {exc}", file=sys.stderr)
+        return 1
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({k: report[k] for k in (

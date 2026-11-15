@@ -7,11 +7,17 @@ real stage artifacts and must never be fabricated by a wrapper script.
 """
 from __future__ import annotations
 
+import os
+import sys
+if os.environ.get("FUTURE2046_PYCACHE_PREFIX"):
+    sys.pycache_prefix = os.environ["FUTURE2046_PYCACHE_PREFIX"]
+else:
+    sys.dont_write_bytecode = True
+
 import argparse
 import json
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 
 from pipeline_contract import digest, inside, run_file, workspace_path
@@ -25,7 +31,7 @@ HERE = Path(__file__).resolve().parent
 
 def invoke(script: str, args: list[str], workspace: Path) -> None:
     result = subprocess.run(
-        [sys.executable, str(HERE / script), "--workspace", str(workspace), *args],
+        [sys.executable, str(HERE / script), *args, "--workspace", str(workspace)],
         text=True, encoding="utf-8", errors="replace",
     )
     if result.returncode:

@@ -9,7 +9,7 @@
 运行：
 
 ```powershell
-python scripts/source_queue.py scan --workspace <工作区> --write
+python scripts/workspace_runtime.py --workspace <工作区> --script source_queue.py -- scan --write
 ```
 
 脚本读取 `workspace.yaml`、`processing-log.jsonl` 和已有的 `source-queue.json`：
@@ -24,10 +24,10 @@ python scripts/source_queue.py scan --workspace <工作区> --write
 ## 选择下一篇
 
 ```powershell
-python scripts/source_queue.py next --workspace <工作区>
+python scripts/workspace_runtime.py --workspace <工作区> --script source_queue.py -- next
 ```
 
-输出最小 `queuePosition` 的未取得终态源稿。这个命令只读取和计算；只有加上 `--write` 才会更新 `workspace.yaml` 指定的 `<record_root>/source-queue.json`。
+输出最小 `queuePosition` 的未取得终态源稿。这个命令只读取和计算；只有加上 `--write` 才会更新 `workspace.yaml` 指定的 `<record_root>/source-queue.json`。不得绕过启动器直接运行内部脚本；启动器会先验证工作区，并把 Python 与临时缓存限制在 `<record_root>/cache/`。
 
 队列文件是可重建缓存，不是源稿处理事实。最终完成状态仍以 V4 `processing-log.jsonl` 和正式提交校验为准。
 

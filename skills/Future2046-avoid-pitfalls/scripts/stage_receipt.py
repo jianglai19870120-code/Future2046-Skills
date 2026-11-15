@@ -2,12 +2,17 @@
 """Create a locked run and append exactly one real stage receipt at a time."""
 from __future__ import annotations
 
+import os
+import sys
+if os.environ.get("FUTURE2046_PYCACHE_PREFIX"):
+    sys.pycache_prefix = os.environ["FUTURE2046_PYCACHE_PREFIX"]
+else:
+    sys.dont_write_bytecode = True
+
 import argparse
 import hashlib
 import json
-import os
 import re
-import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from pipeline_contract import check_stage, digest, record_path, run_file, workspace_path, workspace_setting
@@ -139,7 +144,7 @@ def start(args: argparse.Namespace) -> int:
             lock.unlink()
         raise
     allow_writeback = workspace_setting(root, "allow_source_writeback", False) is True
-    run = {"pipelineVersion": "v4-artifact", "oralPolishContract": "dialogue-v2", "normalizationWritebackRequired": allow_writeback, "candidateEnumerationRequired": True, "viewpointPatternRequired": True, "evidenceSpanRequired": True, "paragraphQualityRequired": True, "runId": args.run_id, "batchId": args.batch_id, "producerId": args.producer_id, "sourcePath": source, "sourceSequence": seq, "queuePosition": seq, "status": "in_progress", "stageReceipts": [], "createdAt": stamp()}
+    run = {"pipelineVersion": "v4-artifact", "viewpointContract": "golden-sentence-v3", "oralPolishContract": "dialogue-v2", "normalizationWritebackRequired": allow_writeback, "candidateEnumerationRequired": True, "viewpointPatternRequired": False, "evidenceSpanRequired": True, "paragraphQualityRequired": True, "runId": args.run_id, "batchId": args.batch_id, "producerId": args.producer_id, "sourcePath": source, "sourceSequence": seq, "queuePosition": seq, "status": "in_progress", "stageReceipts": [], "createdAt": stamp()}
     run.update(source_metadata(source_path))
     write_json(run_dir / "run.json", run)
     write_json(active, {"runId": args.run_id, "sourcePath": source, "sourceSequence": seq, "queuePosition": seq, "status": "in_progress", "startedAt": run["createdAt"]})

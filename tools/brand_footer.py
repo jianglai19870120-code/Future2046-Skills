@@ -2,6 +2,9 @@
 """Append and validate the Future2046 human-readable Markdown brand footer."""
 from __future__ import annotations
 
+import sys
+sys.dont_write_bytecode = True
+
 import argparse
 from pathlib import Path
 
@@ -14,8 +17,26 @@ def load_footer(root: Path) -> str:
     return footer.replace("\r\n", "\n").rstrip("\n") + "\n"
 
 
-def markdown_files(root: Path) -> list[Path]:
-    return sorted((root / "skills").rglob("*.md"))
+def markdown_files(root: Path, scope: str = "skills") -> list[Path]:
+    if scope == "skills":
+        return sorted((root / "skills").rglob("*.md"))
+    if scope != "delivery":
+        raise ValueError(f"unknown brand footer scope: {scope}")
+    files = set((root / "skills").rglob("*.md"))
+    files.update((root / "docs").rglob("*.md"))
+    for name in ("README.md", "CHANGELOG.md", "CONTRIBUTING.md", "NOTICE.md", "DATA-POLICY.md"):
+        path = root / name
+        if path.exists():
+            files.add(path)
+    tools_readme = root / "tools" / "README.md"
+    if tools_readme.exists():
+        files.add(tools_readme)
+    workspace_root = root / "workspaces"
+    if workspace_root.exists():
+        files.update(workspace_root.rglob("README.md"))
+        files.update(workspace_root.rglob("*.md.template"))
+    files.update(p for p in (root / "workspaces" / "少走弯路工作区" / "02_误区卡片").glob("*.md") if p.name != "README.md")
+    return sorted(files)
 
 
 def has_valid_footer(text: str, footer: str) -> bool:
@@ -37,6 +58,7 @@ def append_footer(path: Path, footer: str) -> bool:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", required=True)
+    parser.add_argument("--scope", choices=["skills", "delivery"], default="skills")
     parser.add_argument("--append-existing", action="store_true")
     parser.add_argument("--append-file", action="append", default=[], help="Append the footer to one or more Markdown files")
     args = parser.parse_args()
@@ -53,7 +75,7 @@ def main() -> int:
             changed += append_footer(path.resolve(), footer)
         print(f"PASS: appended brand footer to {changed} specified Markdown files")
         return 0
-    files = markdown_files(root)
+    files = markdown_files(root, args.scope)
     if args.append_existing:
         changed = sum(append_footer(path, footer) for path in files)
         print(f"PASS: appended brand footer to {changed} Markdown files")

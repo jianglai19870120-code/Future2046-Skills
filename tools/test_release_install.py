@@ -2,11 +2,13 @@
 """Install a built release from a clean extracted directory."""
 from __future__ import annotations
 
+import sys
+sys.dont_write_bytecode = True
+
 import argparse
 import os
 import shutil
 import subprocess
-import sys
 import tempfile
 import zipfile
 from pathlib import Path

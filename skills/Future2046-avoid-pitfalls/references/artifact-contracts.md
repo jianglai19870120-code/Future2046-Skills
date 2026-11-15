@@ -36,15 +36,20 @@ Excel 物化是源稿进入 V4 前的预处理，不替代 V4 阶段。物化报
 
 ```json
 {
+  "canonicalViewpoint": "追求播放量不如追求停留和互动",
+  "viewpointMode": "priority_reversal",
+  "viewpointSelectionReason": "原文把播放量与有效用户关系区分开，明确强调停留和深度互动。",
   "viewpointQuality": {
-    "isMistakenBelief": true,
-    "hasErrorObject": true,
-    "hasErrorJudgment": true,
-    "hasCausalDirection": true,
-    "semanticComplete": true,
+    "isSourceGrounded": true,
+    "isCoreJudgment": true,
+    "isDecisive": true,
+    "isSingleIssue": true,
+    "isSemanticallyAlignedWithScene": true,
+    "isTitleViewpointExact": true,
+    "hasCausalOrContrastDirection": true,
     "sourceClose": true,
     "tooCompressed": false,
-    "isCorrectionConclusion": false,
+    "unsupportedExpansion": false,
     "sentenceCount": 1,
     "commaCount": 0,
     "characterCount": 18

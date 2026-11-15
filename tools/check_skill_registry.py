@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """Check every Skill and its optional workspace template."""
+import sys
+sys.dont_write_bytecode = True
+
 import argparse
 import re
 from pathlib import Path
